@@ -14,6 +14,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<ScrapedPage> ScrapedPages { get; set; }
     public DbSet<ScrapingJob> ScrapingJobs { get; set; }
+    public DbSet<JiraIssue> JiraIssues { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +26,10 @@ public class ApplicationDbContext : DbContext
         {
             property.SetColumnType("timestamp with time zone");
         }
+
+        modelBuilder.Entity<JiraIssue>()
+            .HasIndex(j => j.JiraKey)
+            .IsUnique();
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
