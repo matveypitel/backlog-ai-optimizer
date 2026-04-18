@@ -1,3 +1,4 @@
+using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Jira;
 
 using Microsoft.AspNetCore.Mvc;
