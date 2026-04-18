@@ -14,6 +14,13 @@ public class ScrapingJob : BaseEntity
         Url = url;
     }
 
+    public void IncrementAttemptCount() => AttemptCount++;
+
+    public void MarkForRetry()
+    {
+        Status = ScrapingJobStatus.Pending;
+    }
+
     public void MarkRunning()
     {
         Status = ScrapingJobStatus.Running;

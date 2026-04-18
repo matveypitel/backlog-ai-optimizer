@@ -3,7 +3,14 @@ using BacklogOptimizer.Infrastructure;
 
 using Scalar.AspNetCore;
 
-Microsoft.Playwright.Program.Main(["install"]);
+try
+{
+    Microsoft.Playwright.Program.Main(["install"]);
+}
+catch (Exception ex)
+{
+    // Log warning, don't crash
+}
 
 var builder = WebApplication.CreateBuilder(args);
 

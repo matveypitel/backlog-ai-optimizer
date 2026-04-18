@@ -123,8 +123,22 @@ internal sealed class ScrapingWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed scraping job {JobId} for {Url}", job.Id, job.Url);
-            job.MarkFailed(ex.Message);
+            job.IncrementAttemptCount();
+
+            if (job.AttemptCount < _scrapingSettings.MaxRetryAttempts)
+            {
+                _logger.LogInformation("Retrying scraping job {JobId} for {Url} (attempt {Attempt})", job.Id, job.Url, job.AttemptCount);
+
+                job.MarkForRetry();
+
+                var delay = TimeSpan.FromMilliseconds(_scrapingSettings.MaxRetryDelay * Math.Pow(2, job.AttemptCount));
+                await Task.Delay(delay, cancellationToken);
+            }
+            else
+            {
+                _logger.LogError(ex, "Failed scraping job {JobId} for {Url}", job.Id, job.Url);
+                job.MarkFailed(ex.Message);
+            }
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
