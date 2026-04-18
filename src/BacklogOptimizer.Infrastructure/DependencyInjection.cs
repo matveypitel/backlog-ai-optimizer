@@ -1,10 +1,12 @@
 using System.Net.Http.Headers;
 using System.Text;
 
+using BacklogOptimizer.Application.Embeddings;
 using BacklogOptimizer.Application.Jira;
 using BacklogOptimizer.Application.Scraping;
 using BacklogOptimizer.Application.Settings;
 using BacklogOptimizer.Infrastructure.BackgroundServices;
+using BacklogOptimizer.Infrastructure.Embeddings;
 using BacklogOptimizer.Infrastructure.Jira;
 using BacklogOptimizer.Infrastructure.Persistence;
 using BacklogOptimizer.Infrastructure.Scraping;
@@ -20,7 +22,8 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
+                o => o.UseVector()));
 
         services.Configure<ScrapingSettings>(configuration.GetSection(ScrapingSettings.SectionName));
         services.Configure<ScrapingWorkerSettings>(configuration.GetSection(ScrapingWorkerSettings.SectionName));
@@ -42,6 +45,21 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IJiraSyncService, JiraSyncService>();
+
+        var openAiSettings = configuration.GetSection(OpenAiSettings.SectionName).Get<OpenAiSettings>()
+            ?? throw new InvalidOperationException($"'{OpenAiSettings.SectionName}' configuration section is missing.");
+
+        services.Configure<OpenAiSettings>(configuration.GetSection(OpenAiSettings.SectionName));
+
+        services.AddHttpClient<OpenAiEmbeddingClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.openai.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAiSettings.ApiKey);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        });
+
+        services.AddScoped<IEmbeddingSyncService, EmbeddingSyncService>();
+        services.AddScoped<ISimilaritySearchService, SimilaritySearchService>();
 
         return services;
     }
