@@ -3,8 +3,8 @@
     <File Path=".editorconfig" />
     <File Path="Directory.Packages.props" />
   </Folder>
-  <Project Path="/src/BacklogOptimizer.Api/BacklogOptimizer.Api.csproj" Id="8e6c9c7e-6dd7-4215-8e8e-79342f052d07" />
-  <Project Path="/src/BacklogOptimizer.Application/BacklogOptimizer.Application.csproj" Id="7bcabfba-9401-4aad-a8d9-7215202fc022" />
-  <Project Path="/src/BacklogOptimizer.Core/BacklogOptimizer.Core.csproj" Id="b5450555-233e-410f-828f-8cb65d918f39" />
-  <Project Path="/src/BacklogOptimizer.Infrastructure/BacklogOptimizer.Infrastructure.csproj" Id="8c409472-94b8-4328-8b0a-0bbd9c60c719" />
+  <Project Path="src/BacklogOptimizer.Api/BacklogOptimizer.Api.csproj" Id="8e6c9c7e-6dd7-4215-8e8e-79342f052d07" />
+  <Project Path="src/BacklogOptimizer.Application/BacklogOptimizer.Application.csproj" Id="7bcabfba-9401-4aad-a8d9-7215202fc022" />
+  <Project Path="src/BacklogOptimizer.Core/BacklogOptimizer.Core.csproj" Id="b5450555-233e-410f-828f-8cb65d918f39" />
+  <Project Path="src/BacklogOptimizer.Infrastructure/BacklogOptimizer.Infrastructure.csproj" Id="8c409472-94b8-4328-8b0a-0bbd9c60c719" />
 </Solution>

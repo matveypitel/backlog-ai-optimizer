@@ -387,3 +387,9 @@ dotnet_naming_style.s_camelcase.required_suffix =
 dotnet_naming_style.s_camelcase.word_separator = 
 dotnet_naming_style.s_camelcase.capitalization = camel_case
 
+# Suppress IDE0290 (Use recommended naming rules) since we have a large codebase that doesn't follow these naming rules and we don't want to introduce a large number of warnings.
+dotnet_diagnostic.IDE0290.severity = none
+
+# CA1873: Avoid potentially expensive logging
+# Suppress this rule since we have a large codebase that doesn't follow this rule and we don't want to introduce a large number of warnings. We will consider enabling this rule in the future when we have the capacity to address the warnings.
+dotnet_diagnostic.CA1873.severity = none
