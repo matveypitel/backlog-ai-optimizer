@@ -1,3 +1,4 @@
+using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Scraping;
 
 using Microsoft.AspNetCore.Mvc;
