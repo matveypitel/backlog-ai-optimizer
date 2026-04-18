@@ -16,6 +16,8 @@ public class JiraIssue : BaseEntity
     public DateTime JiraUpdatedAt { get; private set; }
     public DateTime LastSyncedAt { get; private set; }
 
+    public JiraIssueEmbedding? Embedding { get; private set; }
+
     public JiraIssue(string jiraKey, string projectKey, string summary,
         string? description, string status, string? priority,
         string? assigneeEmail, string issueType,
