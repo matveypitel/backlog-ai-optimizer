@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/matveypitel/source/repos/backlog-ai-optimizer/**)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet ef *)"
+    ]
+  }
+}

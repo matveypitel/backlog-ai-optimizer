@@ -1,3 +1,4 @@
+using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Infrastructure.Persistence;
@@ -22,10 +23,11 @@ public sealed class FeatureSuggestionsController : ControllerBase
 
     [HttpPost("analyze")]
     [ProducesResponseType(typeof(FeatureSuggestionAnalyzeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Analyze(CancellationToken cancellationToken)
     {
         var result = await _service.AnalyzeAsync(cancellationToken);
-        return Ok(new FeatureSuggestionAnalyzeResponse(result.GapPagesFound, result.SuggestionsGenerated, result.Errors));
+        return result.ToActionResult(r => Ok(new FeatureSuggestionAnalyzeResponse(r.GapPagesFound, r.SuggestionsGenerated, r.Errors)));
     }
 
     [HttpGet]

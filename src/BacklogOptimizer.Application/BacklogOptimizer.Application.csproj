@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BacklogOptimizer.Core\BacklogOptimizer.Core.csproj" />
+  </ItemGroup>
+
 </Project>

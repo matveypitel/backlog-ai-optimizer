@@ -1,4 +1,5 @@
 using BacklogOptimizer.Application.Embeddings;
+using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Core.Entities;
 using BacklogOptimizer.Infrastructure.Persistence;
 
@@ -29,7 +30,7 @@ internal sealed class EmbeddingSyncService : IEmbeddingSyncService
         _logger = logger;
     }
 
-    public async Task<EmbeddingSyncResult> SyncJiraEmbeddingsAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<EmbeddingSyncResult>> SyncJiraEmbeddingsAsync(CancellationToken cancellationToken = default)
     {
         var completedStatuses = _settings.CompletedStatuses;
         var model = _settings.EmbeddingModel;
@@ -76,7 +77,7 @@ internal sealed class EmbeddingSyncService : IEmbeddingSyncService
         return new EmbeddingSyncResult(embeddedCount, skippedCount, errors.AsReadOnly());
     }
 
-    public async Task<EmbeddingSyncResult> SyncPageEmbeddingsAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<EmbeddingSyncResult>> SyncPageEmbeddingsAsync(CancellationToken cancellationToken = default)
     {
         var model = _settings.EmbeddingModel;
 

@@ -1,3 +1,4 @@
+using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Embeddings;
 
@@ -23,7 +24,7 @@ public sealed class EmbeddingsController : ControllerBase
     public async Task<IActionResult> SyncJira(CancellationToken cancellationToken)
     {
         var result = await _syncService.SyncJiraEmbeddingsAsync(cancellationToken);
-        return Ok(new EmbeddingSyncResponse(result.EmbeddedCount, result.SkippedCount, result.Errors));
+        return result.ToActionResult(r => Ok(new EmbeddingSyncResponse(r.EmbeddedCount, r.SkippedCount, r.Errors)));
     }
 
     [HttpPost("sync/pages")]
@@ -31,14 +32,15 @@ public sealed class EmbeddingsController : ControllerBase
     public async Task<IActionResult> SyncPages(CancellationToken cancellationToken)
     {
         var result = await _syncService.SyncPageEmbeddingsAsync(cancellationToken);
-        return Ok(new EmbeddingSyncResponse(result.EmbeddedCount, result.SkippedCount, result.Errors));
+        return result.ToActionResult(r => Ok(new EmbeddingSyncResponse(r.EmbeddedCount, r.SkippedCount, r.Errors)));
     }
 
     [HttpPost("search")]
     [ProducesResponseType(typeof(IReadOnlyList<SimilarityMatch>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Search([FromBody] EmbeddingSearchRequest request, CancellationToken cancellationToken)
     {
-        var matches = await _searchService.FindSimilarPagesAsync(request.JiraKey, request.TopN, cancellationToken);
-        return Ok(matches);
+        var result = await _searchService.FindSimilarPagesAsync(request.JiraKey, request.TopN, cancellationToken);
+        return result.ToActionResult();
     }
 }

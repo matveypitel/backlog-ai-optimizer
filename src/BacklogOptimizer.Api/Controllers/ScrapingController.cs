@@ -1,3 +1,4 @@
+using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Scraping;
 
@@ -21,8 +22,7 @@ public sealed class ScrapingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> EnqueueScrape([FromBody] ScrapeRequest request, CancellationToken cancellationToken)
     {
-        await _scrapingService.EnqueueScrapeAsync(request.Url, cancellationToken);
-
-        return Accepted();
+        var result = await _scrapingService.EnqueueScrapeAsync(request.Url, cancellationToken);
+        return result.ToActionResult(StatusCodes.Status202Accepted);
     }
 }

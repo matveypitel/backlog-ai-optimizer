@@ -1,3 +1,4 @@
+using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Infrastructure.Persistence;
@@ -22,10 +23,11 @@ public sealed class ReprioritizationController : ControllerBase
 
     [HttpPost("analyze")]
     [ProducesResponseType(typeof(ReprioritizationAnalyzeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Analyze(CancellationToken cancellationToken)
     {
         var result = await _service.AnalyzeAsync(cancellationToken);
-        return Ok(new ReprioritizationAnalyzeResponse(result.AnalyzedCount, result.SkippedCount, result.Errors));
+        return result.ToActionResult(r => Ok(new ReprioritizationAnalyzeResponse(r.AnalyzedCount, r.SkippedCount, r.Errors)));
     }
 
     [HttpGet]

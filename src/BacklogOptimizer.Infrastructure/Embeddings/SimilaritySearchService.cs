@@ -1,4 +1,5 @@
 using BacklogOptimizer.Application.Embeddings;
+using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Infrastructure.Persistence;
 
 using Microsoft.EntityFrameworkCore;
@@ -16,18 +17,20 @@ internal sealed class SimilaritySearchService : ISimilaritySearchService
         _dbContext = dbContext;
     }
 
-    public async Task<IReadOnlyList<SimilarityMatch>> FindSimilarPagesAsync(
+    public async Task<Result<IReadOnlyList<SimilarityMatch>>> FindSimilarPagesAsync(
         string jiraKey,
         int topN,
         CancellationToken cancellationToken = default)
     {
         var issue = await _dbContext.JiraIssues
             .Include(j => j.Embedding)
-            .FirstOrDefaultAsync(j => j.JiraKey == jiraKey, cancellationToken)
-            ?? throw new KeyNotFoundException($"Jira issue '{jiraKey}' not found.");
+            .FirstOrDefaultAsync(j => j.JiraKey == jiraKey, cancellationToken);
+
+        if (issue is null)
+            return Errors.NotFound.JiraIssue(jiraKey);
 
         if (issue.Embedding is null)
-            throw new InvalidOperationException($"Jira issue '{jiraKey}' has no embedding. Run sync first.");
+            return Errors.NotFound.JiraIssueEmbedding(jiraKey);
 
         var issueVector = issue.Embedding.Vector;
 
@@ -45,6 +48,6 @@ internal sealed class SimilaritySearchService : ISimilaritySearchService
             .Select(x => new SimilarityMatch(x.ScrapedPageId, x.Url, x.Title, 1.0 - x.Distance))
             .ToListAsync(cancellationToken);
 
-        return matches.AsReadOnly();
+        return Result<IReadOnlyList<SimilarityMatch>>.Success(matches.AsReadOnly());
     }
 }

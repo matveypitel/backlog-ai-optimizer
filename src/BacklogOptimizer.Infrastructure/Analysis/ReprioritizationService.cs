@@ -3,6 +3,7 @@ using System.Text.Json;
 
 using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Application.Embeddings;
+using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Core.Entities;
 using BacklogOptimizer.Infrastructure.Analysis.Dto;
 using BacklogOptimizer.Infrastructure.Persistence;
@@ -49,7 +50,7 @@ internal sealed class ReprioritizationService : IReprioritizationService
         _logger = logger;
     }
 
-    public async Task<ReprioritizationResult> AnalyzeAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<ReprioritizationResult>> AnalyzeAsync(CancellationToken cancellationToken = default)
     {
         var completedStatuses = _settings.CompletedStatuses;
 

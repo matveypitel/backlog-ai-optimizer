@@ -1,6 +1,8 @@
+using BacklogOptimizer.Core.Common;
+
 namespace BacklogOptimizer.Application.Analysis;
 
 public interface IReprioritizationService
 {
-    Task<ReprioritizationResult> AnalyzeAsync(CancellationToken cancellationToken = default);
+    Task<Result<ReprioritizationResult>> AnalyzeAsync(CancellationToken cancellationToken = default);
 }

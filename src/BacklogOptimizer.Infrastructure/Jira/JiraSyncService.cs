@@ -1,6 +1,7 @@
 using System.Globalization;
 
 using BacklogOptimizer.Application.Jira;
+using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Core.Entities;
 using BacklogOptimizer.Infrastructure.Jira.Dto;
 using BacklogOptimizer.Infrastructure.Persistence;
@@ -30,7 +31,7 @@ internal sealed class JiraSyncService : IJiraSyncService
         _logger = logger;
     }
 
-    public async Task<JiraSyncResult> SyncAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<JiraSyncResult>> SyncAsync(CancellationToken cancellationToken = default)
     {
         var jql = _settings.JqlFilter
             ?? $"project = {_settings.ProjectKey} AND issueType in standardIssueTypes() ORDER BY created ASC";
@@ -46,9 +47,11 @@ internal sealed class JiraSyncService : IJiraSyncService
             {
                 page = await _apiClient.SearchAsync(jql, nextPageToken, _settings.MaxResultsPerPage, cancellationToken);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogError(ex, "Jira API call failed");
+                if (syncedCount == 0)
+                    return Errors.Jira.ApiFailure(ex.Message);
                 errors.Add($"API error: {ex.Message}");
                 break;
             }

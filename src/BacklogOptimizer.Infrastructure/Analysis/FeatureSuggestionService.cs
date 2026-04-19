@@ -3,6 +3,7 @@ using System.Text.Json;
 
 using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Application.Embeddings;
+using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Core.Entities;
 using BacklogOptimizer.Infrastructure.Analysis.Dto;
 using BacklogOptimizer.Infrastructure.Persistence;
@@ -47,7 +48,7 @@ internal sealed class FeatureSuggestionService : IFeatureSuggestionService
         _logger = logger;
     }
 
-    public async Task<FeatureSuggestionResult> AnalyzeAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<FeatureSuggestionResult>> AnalyzeAsync(CancellationToken cancellationToken = default)
     {
         var completedStatuses = _settings.CompletedStatuses;
 
@@ -80,10 +81,10 @@ internal sealed class FeatureSuggestionService : IFeatureSuggestionService
         {
             json = await _chatClient.CompleteAsync(_settings.CompletionModel, SystemPrompt, userPrompt, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(ex, "LLM call failed for feature suggestion analysis");
-            return new FeatureSuggestionResult(gapPages.Count, 0, [$"LLM call failed: {ex.Message}"]);
+            return Errors.Llm.CallFailed(ex.Message);
         }
 
         FeatureSuggestionsWrapper wrapper;
@@ -92,10 +93,10 @@ internal sealed class FeatureSuggestionService : IFeatureSuggestionService
             wrapper = JsonSerializer.Deserialize<FeatureSuggestionsWrapper>(json, ReadOptions)
                 ?? throw new InvalidOperationException("Null LLM response for feature suggestions");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(ex, "Failed to deserialize feature suggestion LLM response");
-            return new FeatureSuggestionResult(gapPages.Count, 0, [$"Failed to parse LLM response: {ex.Message}"]);
+            return Errors.Llm.ResponseInvalid(ex.Message);
         }
 
         var suggestions = wrapper.Suggestions

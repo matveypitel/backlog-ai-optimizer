@@ -1,6 +1,8 @@
-﻿namespace BacklogOptimizer.Application.Scraping;
+using BacklogOptimizer.Core.Common;
+
+namespace BacklogOptimizer.Application.Scraping;
 
 public interface IScrapingService
 {
-    Task EnqueueScrapeAsync(string url, CancellationToken cancellationToken = default);
+    Task<Result> EnqueueScrapeAsync(string url, CancellationToken cancellationToken = default);
 }

@@ -1,7 +1,9 @@
+using BacklogOptimizer.Core.Common;
+
 namespace BacklogOptimizer.Application.Embeddings;
 
 public interface IEmbeddingSyncService
 {
-    Task<EmbeddingSyncResult> SyncJiraEmbeddingsAsync(CancellationToken cancellationToken = default);
-    Task<EmbeddingSyncResult> SyncPageEmbeddingsAsync(CancellationToken cancellationToken = default);
+    Task<Result<EmbeddingSyncResult>> SyncJiraEmbeddingsAsync(CancellationToken cancellationToken = default);
+    Task<Result<EmbeddingSyncResult>> SyncPageEmbeddingsAsync(CancellationToken cancellationToken = default);
 }

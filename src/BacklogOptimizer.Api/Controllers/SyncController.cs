@@ -1,3 +1,4 @@
+using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Jira;
 
@@ -22,10 +23,6 @@ public sealed class SyncController : ControllerBase
     public async Task<IActionResult> Sync(CancellationToken cancellationToken)
     {
         var result = await _jiraSyncService.SyncAsync(cancellationToken);
-
-        if (result.SyncedCount == 0 && result.Errors.Count > 0)
-            return BadRequest(new { errors = result.Errors });
-
-        return Ok(new SyncResponse(result.SyncedCount, result.Errors));
+        return result.ToActionResult(r => Ok(new SyncResponse(r.SyncedCount, r.Errors)));
     }
 }
