@@ -24,12 +24,12 @@ public sealed class ReprioritizationController : ControllerBase
     }
 
     [HttpPost("analyze")]
-    [ProducesResponseType(typeof(ReprioritizationAnalyzeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Analyze(CancellationToken cancellationToken)
     {
-        var result = await _service.AnalyzeAsync(cancellationToken);
-        return result.ToActionResult(r => Ok(new ReprioritizationAnalyzeResponse(r.AnalyzedCount, r.SkippedCount, r.Errors)));
+        var result = await _service.EnqueueAnalysisAsync(cancellationToken);
+        return result.ToActionResult(StatusCodes.Status202Accepted);
     }
 
     [HttpGet]

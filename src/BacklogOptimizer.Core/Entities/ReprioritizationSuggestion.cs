@@ -28,4 +28,19 @@ public class ReprioritizationSuggestion : BaseEntity
         ConfidenceScore = confidenceScore;
         AnalyzedAt = DateTime.UtcNow;
     }
+
+    public void Update(
+        string currentPriority,
+        string suggestedPriority,
+        string reasoning,
+        string competitorEvidence,
+        double confidenceScore)
+    {
+        CurrentPriority = currentPriority;
+        SuggestedPriority = suggestedPriority;
+        Reasoning = reasoning;
+        CompetitorEvidence = competitorEvidence;
+        ConfidenceScore = confidenceScore;
+        AnalyzedAt = DateTime.UtcNow;
+    }
 }

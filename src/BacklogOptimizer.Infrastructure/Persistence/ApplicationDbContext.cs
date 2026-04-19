@@ -19,6 +19,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<ScrapedPageEmbedding> ScrapedPageEmbeddings { get; set; }
     public DbSet<ReprioritizationSuggestion> ReprioritizationSuggestions { get; set; }
     public DbSet<FeatureSuggestion> FeatureSuggestions { get; set; }
+    public DbSet<FeatureSuggestionJob> FeatureSuggestionJobs { get; set; }
+    public DbSet<ReprioritizationJob> ReprioritizationJobs { get; set; }
     public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

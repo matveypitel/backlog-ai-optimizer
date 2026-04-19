@@ -24,12 +24,12 @@ public sealed class FeatureSuggestionsController : ControllerBase
     }
 
     [HttpPost("analyze")]
-    [ProducesResponseType(typeof(FeatureSuggestionAnalyzeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Analyze(CancellationToken cancellationToken)
     {
-        var result = await _service.AnalyzeAsync(cancellationToken);
-        return result.ToActionResult(r => Ok(new FeatureSuggestionAnalyzeResponse(r.GapPagesFound, r.SuggestionsGenerated, r.Errors)));
+        var result = await _service.EnqueueAnalysisAsync(cancellationToken);
+        return result.ToActionResult(StatusCodes.Status202Accepted);
     }
 
     [HttpGet]

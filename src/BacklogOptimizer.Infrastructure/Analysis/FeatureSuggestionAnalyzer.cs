@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 
 namespace BacklogOptimizer.Infrastructure.Analysis;
 
-internal sealed class FeatureSuggestionService : IFeatureSuggestionService
+internal sealed class FeatureSuggestionAnalyzer
 {
     private const string SystemPrompt =
         """
@@ -34,13 +34,13 @@ internal sealed class FeatureSuggestionService : IFeatureSuggestionService
     private readonly OpenAiChatClient _chatClient;
     private readonly ApplicationDbContext _dbContext;
     private readonly OpenAiSettings _settings;
-    private readonly ILogger<FeatureSuggestionService> _logger;
+    private readonly ILogger<FeatureSuggestionAnalyzer> _logger;
 
-    public FeatureSuggestionService(
+    public FeatureSuggestionAnalyzer(
         OpenAiChatClient chatClient,
         ApplicationDbContext dbContext,
         IOptions<OpenAiSettings> options,
-        ILogger<FeatureSuggestionService> logger)
+        ILogger<FeatureSuggestionAnalyzer> logger)
     {
         _chatClient = chatClient;
         _dbContext = dbContext;
@@ -72,49 +72,81 @@ internal sealed class FeatureSuggestionService : IFeatureSuggestionService
 
         var backlogSummary = issueEmbeddings
             .Select(ie => $"[{ie.JiraIssue.JiraKey}] {ie.JiraIssue.Summary}")
-            .Take(50);
-
-        var userPrompt = BuildUserPrompt(backlogSummary, gapPages);
-
-        string json;
-        try
-        {
-            json = await _chatClient.CompleteAsync(_settings.CompletionModel, SystemPrompt, userPrompt, cancellationToken);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _logger.LogError(ex, "LLM call failed for feature suggestion analysis");
-            return Errors.Llm.CallFailed(ex.Message);
-        }
-
-        FeatureSuggestionsWrapper wrapper;
-        try
-        {
-            wrapper = JsonSerializer.Deserialize<FeatureSuggestionsWrapper>(json, ReadOptions)
-                ?? throw new InvalidOperationException("Null LLM response for feature suggestions");
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _logger.LogError(ex, "Failed to deserialize feature suggestion LLM response");
-            return Errors.Llm.ResponseInvalid(ex.Message);
-        }
-
-        var suggestions = wrapper.Suggestions
-            .Select(item => new FeatureSuggestion(
-                item.Title,
-                item.Description,
-                item.IssueType,
-                item.SuggestedPriority,
-                JsonSerializer.Serialize(item.Tags),
-                item.Reasoning,
-                item.CompetitorEvidence))
             .ToList();
 
-        await _dbContext.FeatureSuggestions.ExecuteDeleteAsync(cancellationToken);
-        _dbContext.FeatureSuggestions.AddRange(suggestions);
+        var existing = await _dbContext.FeatureSuggestions.ToListAsync(cancellationToken);
+        var existingByTitle = existing.ToDictionary(f => f.Title, f => f, StringComparer.OrdinalIgnoreCase);
+
+        var batchSize = Math.Max(1, _settings.FeatureSuggestionBatchSize);
+        var errors = new List<string>();
+        var suggestionsGenerated = 0;
+
+        for (var offset = 0; offset < gapPages.Count; offset += batchSize)
+        {
+            var batch = gapPages.Skip(offset).Take(batchSize).ToList();
+            var batchNumber = offset / batchSize + 1;
+            var batchCount = (gapPages.Count + batchSize - 1) / batchSize;
+
+            _logger.LogInformation(
+                "Feature suggestion batch {BatchNumber}/{BatchCount} ({BatchSize} pages)",
+                batchNumber, batchCount, batch.Count);
+
+            var userPrompt = BuildUserPrompt(backlogSummary, batch);
+
+            string json;
+            try
+            {
+                json = await _chatClient.CompleteAsync(_settings.CompletionModel, SystemPrompt, userPrompt, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "LLM call failed for feature suggestion batch {BatchNumber}", batchNumber);
+                errors.Add($"batch {batchNumber}: {ex.Message}");
+                continue;
+            }
+
+            FeatureSuggestionsWrapper wrapper;
+            try
+            {
+                wrapper = JsonSerializer.Deserialize<FeatureSuggestionsWrapper>(json, ReadOptions)
+                    ?? throw new InvalidOperationException("Null LLM response for feature suggestions");
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Failed to deserialize feature suggestion LLM response for batch {BatchNumber}", batchNumber);
+                errors.Add($"batch {batchNumber}: {ex.Message}");
+                continue;
+            }
+
+            foreach (var item in wrapper.Suggestions)
+            {
+                var tags = JsonSerializer.Serialize(item.Tags);
+
+                if (existingByTitle.TryGetValue(item.Title, out var current))
+                {
+                    current.Update(item.Description, item.IssueType, item.SuggestedPriority, tags, item.Reasoning, item.CompetitorEvidence);
+                }
+                else
+                {
+                    var added = new FeatureSuggestion(
+                        item.Title,
+                        item.Description,
+                        item.IssueType,
+                        item.SuggestedPriority,
+                        tags,
+                        item.Reasoning,
+                        item.CompetitorEvidence);
+                    _dbContext.FeatureSuggestions.Add(added);
+                    existingByTitle[item.Title] = added;
+                }
+
+                suggestionsGenerated++;
+            }
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new FeatureSuggestionResult(gapPages.Count, suggestions.Count, []);
+        return new FeatureSuggestionResult(gapPages.Count, suggestionsGenerated, errors);
     }
 
     private static double CosineSimilarity(Pgvector.Vector a, Pgvector.Vector b)

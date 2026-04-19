@@ -33,9 +33,12 @@ public static class DependencyInjection
 
         services.Configure<ScrapingSettings>(configuration.GetSection(ScrapingSettings.SectionName));
         services.Configure<ScrapingWorkerSettings>(configuration.GetSection(ScrapingWorkerSettings.SectionName));
+        services.Configure<AnalysisWorkerSettings>(configuration.GetSection(AnalysisWorkerSettings.SectionName));
 
         services.AddScoped<IScrapingService, ScrapingJobService>();
         services.AddHostedService<ScrapingWorker>();
+        services.AddHostedService<FeatureSuggestionWorker>();
+        services.AddHostedService<ReprioritizationWorker>();
 
         var jiraSettings = configuration.GetSection(JiraSettings.SectionName).Get<JiraSettings>()
             ?? throw new InvalidOperationException($"'{JiraSettings.SectionName}' configuration section is missing.");
@@ -74,8 +77,10 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         });
 
-        services.AddScoped<IReprioritizationService, ReprioritizationService>();
-        services.AddScoped<IFeatureSuggestionService, FeatureSuggestionService>();
+        services.AddScoped<IReprioritizationService, ReprioritizationJobService>();
+        services.AddScoped<IFeatureSuggestionService, FeatureSuggestionJobService>();
+        services.AddScoped<ReprioritizationAnalyzer>();
+        services.AddScoped<FeatureSuggestionAnalyzer>();
 
         AddAuth(services, configuration);
 

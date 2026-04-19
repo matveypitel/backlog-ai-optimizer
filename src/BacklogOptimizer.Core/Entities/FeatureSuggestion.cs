@@ -31,4 +31,21 @@ public class FeatureSuggestion : BaseEntity
         CompetitorEvidence = competitorEvidence;
         AnalyzedAt = DateTime.UtcNow;
     }
+
+    public void Update(
+        string description,
+        string issueType,
+        string suggestedPriority,
+        string tags,
+        string reasoning,
+        string competitorEvidence)
+    {
+        Description = description;
+        IssueType = issueType;
+        SuggestedPriority = suggestedPriority;
+        Tags = tags;
+        Reasoning = reasoning;
+        CompetitorEvidence = competitorEvidence;
+        AnalyzedAt = DateTime.UtcNow;
+    }
 }
