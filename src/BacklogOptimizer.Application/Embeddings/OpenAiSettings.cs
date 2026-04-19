@@ -7,4 +7,7 @@ public class OpenAiSettings
     public string ApiKey { get; init; } = string.Empty;
     public string EmbeddingModel { get; init; } = "text-embedding-3-small";
     public string[] CompletedStatuses { get; init; } = ["Done", "Closed", "Resolved"];
+    public string CompletionModel { get; init; } = "gpt-4o-mini";
+    public double CoverageGapThreshold { get; init; } = 0.7;
+    public int ReprioritizationSimilarPagesTopN { get; init; } = 3;
 }
