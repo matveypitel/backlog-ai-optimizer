@@ -1,10 +1,12 @@
 using System.Net.Http.Headers;
 using System.Text;
 
+using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Application.Embeddings;
 using BacklogOptimizer.Application.Jira;
 using BacklogOptimizer.Application.Scraping;
 using BacklogOptimizer.Application.Settings;
+using BacklogOptimizer.Infrastructure.Analysis;
 using BacklogOptimizer.Infrastructure.BackgroundServices;
 using BacklogOptimizer.Infrastructure.Embeddings;
 using BacklogOptimizer.Infrastructure.Jira;
@@ -60,6 +62,16 @@ public static class DependencyInjection
 
         services.AddScoped<IEmbeddingSyncService, EmbeddingSyncService>();
         services.AddScoped<ISimilaritySearchService, SimilaritySearchService>();
+
+        services.AddHttpClient<OpenAiChatClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.openai.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAiSettings.ApiKey);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        });
+
+        services.AddScoped<IReprioritizationService, ReprioritizationService>();
+        services.AddScoped<IFeatureSuggestionService, FeatureSuggestionService>();
 
         return services;
     }

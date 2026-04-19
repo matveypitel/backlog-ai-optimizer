@@ -42,7 +42,7 @@ internal sealed class SimilaritySearchService : ISimilaritySearchService
             })
             .OrderBy(x => x.Distance)
             .Take(topN)
-            .Select(x => new SimilarityMatch(x.ScrapedPageId, x.Url, x.Title, 1.0 - (double)x.Distance))
+            .Select(x => new SimilarityMatch(x.ScrapedPageId, x.Url, x.Title, 1.0 - x.Distance))
             .ToListAsync(cancellationToken);
 
         return matches.AsReadOnly();

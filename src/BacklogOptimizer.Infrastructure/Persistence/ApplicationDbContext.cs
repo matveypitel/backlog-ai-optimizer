@@ -17,6 +17,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<JiraIssue> JiraIssues { get; set; }
     public DbSet<JiraIssueEmbedding> JiraIssueEmbeddings { get; set; }
     public DbSet<ScrapedPageEmbedding> ScrapedPageEmbeddings { get; set; }
+    public DbSet<ReprioritizationSuggestion> ReprioritizationSuggestions { get; set; }
+    public DbSet<FeatureSuggestion> FeatureSuggestions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -56,6 +58,10 @@ public class ApplicationDbContext : DbContext
             b.Property(e => e.Vector).HasColumnType("vector(1536)");
             b.Property(e => e.EmbeddedAt).HasColumnType("timestamp with time zone");
         });
+
+        modelBuilder.Entity<ReprioritizationSuggestion>()
+            .HasIndex(r => r.JiraKey)
+            .IsUnique();
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
