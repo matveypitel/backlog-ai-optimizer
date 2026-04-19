@@ -36,6 +36,29 @@ public static class Errors
             $"Jira API call failed: {message}");
     }
 
+    public static class Auth
+    {
+        public static Error InvalidCredentials => new(
+            "auth.invalid_credentials",
+            ErrorType.Unauthorized,
+            "Email or password is incorrect.");
+
+        public static Error EmailAlreadyExists(string email) => new(
+            "auth.email_already_exists",
+            ErrorType.Validation,
+            $"A user with email '{email}' already exists.");
+
+        public static Error EmailRequired => new(
+            "auth.email_required",
+            ErrorType.Validation,
+            "Email must be a non-empty value.");
+
+        public static Error PasswordTooShort => new(
+            "auth.password_too_short",
+            ErrorType.Validation,
+            "Password must be at least 8 characters long.");
+    }
+
     public static class Llm
     {
         public static Error CallFailed(string message) => new(

@@ -3,6 +3,7 @@ using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Infrastructure.Persistence;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ namespace BacklogOptimizer.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public sealed class FeatureSuggestionsController : ControllerBase
 {
     private readonly IFeatureSuggestionService _service;

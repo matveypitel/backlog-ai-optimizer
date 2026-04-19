@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ScrapedPageEmbedding> ScrapedPageEmbeddings { get; set; }
     public DbSet<ReprioritizationSuggestion> ReprioritizationSuggestions { get; set; }
     public DbSet<FeatureSuggestion> FeatureSuggestions { get; set; }
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -62,6 +63,14 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<ReprioritizationSuggestion>()
             .HasIndex(r => r.JiraKey)
             .IsUnique();
+
+        modelBuilder.Entity<User>(b =>
+        {
+            b.HasIndex(u => u.Email).IsUnique();
+            b.Property(u => u.Email).IsRequired();
+            b.Property(u => u.PasswordHash).IsRequired();
+            b.Property(u => u.Role).HasConversion<string>();
+        });
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

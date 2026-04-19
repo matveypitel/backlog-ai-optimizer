@@ -1,13 +1,16 @@
 using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
+using BacklogOptimizer.Application.Auth;
 using BacklogOptimizer.Application.Jira;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BacklogOptimizer.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = Roles.Admin)]
 public sealed class SyncController : ControllerBase
 {
     private readonly IJiraSyncService _jiraSyncService;

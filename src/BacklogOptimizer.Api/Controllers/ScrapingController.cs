@@ -1,13 +1,16 @@
 using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
+using BacklogOptimizer.Application.Auth;
 using BacklogOptimizer.Application.Scraping;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BacklogOptimizer.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = Roles.Admin)]
 public sealed class ScrapingController : ControllerBase
 {
     private readonly IScrapingService _scrapingService;

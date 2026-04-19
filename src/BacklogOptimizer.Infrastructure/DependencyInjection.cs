@@ -2,20 +2,24 @@ using System.Net.Http.Headers;
 using System.Text;
 
 using BacklogOptimizer.Application.Analysis;
+using BacklogOptimizer.Application.Auth;
 using BacklogOptimizer.Application.Embeddings;
 using BacklogOptimizer.Application.Jira;
 using BacklogOptimizer.Application.Scraping;
 using BacklogOptimizer.Application.Settings;
 using BacklogOptimizer.Infrastructure.Analysis;
+using BacklogOptimizer.Infrastructure.Auth;
 using BacklogOptimizer.Infrastructure.BackgroundServices;
 using BacklogOptimizer.Infrastructure.Embeddings;
 using BacklogOptimizer.Infrastructure.Jira;
 using BacklogOptimizer.Infrastructure.Persistence;
 using BacklogOptimizer.Infrastructure.Scraping;
 
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BacklogOptimizer.Infrastructure;
 
@@ -73,6 +77,40 @@ public static class DependencyInjection
         services.AddScoped<IReprioritizationService, ReprioritizationService>();
         services.AddScoped<IFeatureSuggestionService, FeatureSuggestionService>();
 
+        AddAuth(services, configuration);
+
         return services;
+    }
+
+    private static void AddAuth(IServiceCollection services, IConfiguration configuration)
+    {
+        var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
+            ?? throw new InvalidOperationException($"'{JwtSettings.SectionName}' configuration section is missing.");
+
+        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.Configure<AdminSeedSettings>(configuration.GetSection(AdminSeedSettings.SectionName));
+
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddHostedService<AdminSeeder>();
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SigningKey)),
+                    ClockSkew = TimeSpan.FromSeconds(30)
+                };
+            });
+
+        services.AddAuthorization();
     }
 }
