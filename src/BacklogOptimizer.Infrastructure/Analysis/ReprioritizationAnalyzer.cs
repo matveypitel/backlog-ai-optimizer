@@ -3,6 +3,7 @@ using System.Text.Json;
 
 using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Application.Embeddings;
+using BacklogOptimizer.Application.Prompts;
 using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Core.Entities;
 using BacklogOptimizer.Infrastructure.Analysis.Dto;
@@ -16,19 +17,6 @@ namespace BacklogOptimizer.Infrastructure.Analysis;
 
 internal sealed class ReprioritizationAnalyzer
 {
-    private const string SystemPrompt =
-        """
-        You are a product management expert analyzing competitive intelligence.
-        You will receive a list of Jira backlog items, each with its most similar competitor features.
-        For each item, evaluate whether the current priority needs adjustment.
-        Consider: market pressure indicated by competitor activity, feature parity gaps, and user impact signals.
-        Only suggest a priority change when there is a clear, concrete reason based on competitor evidence.
-        If the current priority is already correct and no change is needed, return "suggested_priority": null for that item.
-        Respond with a JSON object matching exactly this schema:
-        {"items": [{"jira_key": "string", "suggested_priority": "string (Highest|High|Medium|Low|Lowest) or null", "reasoning": "string", "competitor_evidence": "string (feature name + URL)", "confidence_score": number (0.0-1.0)}]}
-        Include exactly one entry per input item, keyed by its jira_key.
-        """;
-
     private static readonly JsonSerializerOptions ReadOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -37,17 +25,20 @@ internal sealed class ReprioritizationAnalyzer
 
     private readonly OpenAiChatClient _chatClient;
     private readonly ApplicationDbContext _dbContext;
+    private readonly IPromptService _promptService;
     private readonly OpenAiSettings _settings;
     private readonly ILogger<ReprioritizationAnalyzer> _logger;
 
     public ReprioritizationAnalyzer(
         OpenAiChatClient chatClient,
         ApplicationDbContext dbContext,
+        IPromptService promptService,
         IOptions<OpenAiSettings> options,
         ILogger<ReprioritizationAnalyzer> logger)
     {
         _chatClient = chatClient;
         _dbContext = dbContext;
+        _promptService = promptService;
         _settings = options.Value;
         _logger = logger;
     }
@@ -91,6 +82,8 @@ internal sealed class ReprioritizationAnalyzer
             issuesWithFeatures.Add((issue, topFeatures));
         }
 
+        var systemPrompt = await _promptService.BuildSystemPromptAsync(PromptType.Reprioritization, cancellationToken);
+
         var batchSize = Math.Max(1, _settings.ReprioritizationBatchSize);
         var errors = new List<string>();
         var analyzedCount = 0;
@@ -110,7 +103,7 @@ internal sealed class ReprioritizationAnalyzer
             string json;
             try
             {
-                json = await _chatClient.CompleteAsync(_settings.CompletionModel, SystemPrompt, userPrompt, cancellationToken);
+                json = await _chatClient.CompleteAsync(_settings.CompletionModel, systemPrompt, userPrompt, cancellationToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -223,6 +216,12 @@ internal sealed class ReprioritizationAnalyzer
                     sb.Append('[').Append(feature.Category).Append("] ");
                 sb.Append(feature.Name).Append(" (similarity: ").Append(score.ToString("F2")).AppendLine(")");
                 sb.AppendLine($"  Description: {feature.Description}");
+                if (!string.IsNullOrWhiteSpace(feature.Differentiators))
+                    sb.AppendLine($"  Differentiators: {feature.Differentiators}");
+                if (!string.IsNullOrWhiteSpace(feature.TargetAudience))
+                    sb.AppendLine($"  Target audience: {feature.TargetAudience}");
+                AppendJsonArray(sb, "Key benefits", feature.KeyBenefits);
+                AppendJsonArray(sb, "Use cases", feature.UseCases);
                 sb.AppendLine($"  Source: {feature.ScrapedPage.Url}");
             }
 
@@ -230,5 +229,24 @@ internal sealed class ReprioritizationAnalyzer
         }
 
         return sb.ToString();
+    }
+
+    private static void AppendJsonArray(StringBuilder sb, string label, string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return;
+
+        try
+        {
+            var items = JsonSerializer.Deserialize<string[]>(json);
+            if (items is null || items.Length == 0)
+                return;
+
+            sb.Append("  ").Append(label).Append(": ").AppendLine(string.Join("; ", items));
+        }
+        catch (JsonException)
+        {
+            // ignore malformed legacy data
+        }
     }
 }

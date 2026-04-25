@@ -9,4 +9,8 @@ public sealed record FeatureSuggestionResponse(
     string Tags,
     string Reasoning,
     string CompetitorEvidence,
+    string BusinessValue,
+    string EstimatedImpact,
+    string UserStories,
+    string AcceptanceCriteria,
     DateTime AnalyzedAt);

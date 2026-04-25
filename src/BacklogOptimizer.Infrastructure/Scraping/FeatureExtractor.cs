@@ -1,6 +1,7 @@
 using System.Text.Json;
 
 using BacklogOptimizer.Application.Embeddings;
+using BacklogOptimizer.Application.Prompts;
 using BacklogOptimizer.Core.Entities;
 using BacklogOptimizer.Infrastructure.Analysis;
 using BacklogOptimizer.Infrastructure.Analysis.Dto;
@@ -14,15 +15,6 @@ namespace BacklogOptimizer.Infrastructure.Scraping;
 
 internal sealed class FeatureExtractor
 {
-    private const string SystemPrompt =
-        """
-        You are a product analyst reading a competitor's web page.
-        Extract the distinct, user-facing product features described on the page.
-        Each feature must be concrete and non-overlapping. Skip marketing fluff, pricing, and company info.
-        Respond with a JSON object: {"features": [{"name": "string (short, 3-8 words)", "description": "string (1-3 sentences, what the feature does for the user)", "category": "string or null (e.g. Analytics, Collaboration, Integrations)"}]}.
-        If the page has no product features, return {"features": []}.
-        """;
-
     private const int MaxContentChars = 8000;
 
     private static readonly JsonSerializerOptions ReadOptions = new()
@@ -33,17 +25,20 @@ internal sealed class FeatureExtractor
 
     private readonly OpenAiChatClient _chatClient;
     private readonly ApplicationDbContext _dbContext;
+    private readonly IPromptService _promptService;
     private readonly OpenAiSettings _settings;
     private readonly ILogger<FeatureExtractor> _logger;
 
     public FeatureExtractor(
         OpenAiChatClient chatClient,
         ApplicationDbContext dbContext,
+        IPromptService promptService,
         IOptions<OpenAiSettings> settings,
         ILogger<FeatureExtractor> logger)
     {
         _chatClient = chatClient;
         _dbContext = dbContext;
+        _promptService = promptService;
         _settings = settings.Value;
         _logger = logger;
     }
@@ -69,7 +64,8 @@ internal sealed class FeatureExtractor
 
         var userPrompt = $"URL: {page.Url}\nTitle: {page.Title ?? string.Empty}\n\nContent:\n{content}";
 
-        var json = await _chatClient.CompleteAsync(_settings.CompletionModel, SystemPrompt, userPrompt, cancellationToken);
+        var systemPrompt = await _promptService.BuildSystemPromptAsync(PromptType.FeatureExtraction, cancellationToken);
+        var json = await _chatClient.CompleteAsync(_settings.CompletionModel, systemPrompt, userPrompt, cancellationToken);
 
         var wrapper = JsonSerializer.Deserialize<CompetitorFeaturesWrapper>(json, ReadOptions)
             ?? throw new InvalidOperationException("Null LLM response for feature extraction");
@@ -87,7 +83,11 @@ internal sealed class FeatureExtractor
                 page.Id,
                 item.Name.Trim(),
                 item.Description.Trim(),
-                string.IsNullOrWhiteSpace(item.Category) ? null : item.Category.Trim()));
+                string.IsNullOrWhiteSpace(item.Category) ? null : item.Category.Trim(),
+                JsonSerializer.Serialize(item.KeyBenefits ?? []),
+                JsonSerializer.Serialize(item.UseCases ?? []),
+                item.Differentiators?.Trim() ?? string.Empty,
+                string.IsNullOrWhiteSpace(item.TargetAudience) ? null : item.TargetAudience.Trim()));
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

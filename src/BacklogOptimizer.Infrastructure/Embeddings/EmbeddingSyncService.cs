@@ -1,3 +1,6 @@
+using System.Text;
+using System.Text.Json;
+
 using BacklogOptimizer.Application.Embeddings;
 using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Core.Entities;
@@ -99,9 +102,7 @@ internal sealed class EmbeddingSyncService : IEmbeddingSyncService
 
             try
             {
-                var text = string.IsNullOrWhiteSpace(feature.Category)
-                    ? $"{feature.Name}\n{feature.Description}"
-                    : $"[{feature.Category}] {feature.Name}\n{feature.Description}";
+                var text = BuildFeatureEmbeddingText(feature);
 
                 var floats = await _client.GetEmbeddingAsync(text, model, cancellationToken);
                 var vector = new Vector(floats);
@@ -123,5 +124,43 @@ internal sealed class EmbeddingSyncService : IEmbeddingSyncService
         }
 
         return new EmbeddingSyncResult(embeddedCount, skippedCount, errors.AsReadOnly());
+    }
+
+    private static string BuildFeatureEmbeddingText(CompetitorFeature feature)
+    {
+        var sb = new StringBuilder();
+        if (!string.IsNullOrWhiteSpace(feature.Category))
+            sb.Append('[').Append(feature.Category).Append("] ");
+        sb.AppendLine(feature.Name);
+        sb.AppendLine(feature.Description);
+
+        AppendJsonArray(sb, "Benefits", feature.KeyBenefits);
+        AppendJsonArray(sb, "Use cases", feature.UseCases);
+
+        if (!string.IsNullOrWhiteSpace(feature.Differentiators))
+            sb.Append("Differentiators: ").AppendLine(feature.Differentiators);
+
+        if (!string.IsNullOrWhiteSpace(feature.TargetAudience))
+            sb.Append("Audience: ").AppendLine(feature.TargetAudience);
+
+        return sb.ToString();
+    }
+
+    private static void AppendJsonArray(StringBuilder sb, string label, string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return;
+
+        try
+        {
+            var items = JsonSerializer.Deserialize<string[]>(json);
+            if (items is null || items.Length == 0)
+                return;
+
+            sb.Append(label).Append(": ").AppendLine(string.Join("; ", items));
+        }
+        catch (JsonException)
+        {
+        }
     }
 }

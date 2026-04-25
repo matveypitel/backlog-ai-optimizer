@@ -41,7 +41,8 @@ public sealed class FeatureSuggestionsController : ControllerBase
             .Select(f => new FeatureSuggestionResponse(
                 f.Id, f.Title, f.Description, f.IssueType,
                 f.SuggestedPriority, f.Tags, f.Reasoning,
-                f.CompetitorEvidence, f.AnalyzedAt))
+                f.CompetitorEvidence, f.BusinessValue, f.EstimatedImpact,
+                f.UserStories, f.AcceptanceCriteria, f.AnalyzedAt))
             .ToListAsync(cancellationToken);
 
         return Ok(items);

@@ -23,6 +23,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<FeatureSuggestionJob> FeatureSuggestionJobs { get; set; }
     public DbSet<ReprioritizationJob> ReprioritizationJobs { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<PromptTemplate> PromptTemplates { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,6 +85,13 @@ public class ApplicationDbContext : DbContext
             b.Property(u => u.Email).IsRequired();
             b.Property(u => u.PasswordHash).IsRequired();
             b.Property(u => u.Role).HasConversion<string>();
+        });
+
+        modelBuilder.Entity<PromptTemplate>(b =>
+        {
+            b.HasIndex(t => t.Type).IsUnique();
+            b.Property(t => t.Type).HasConversion<int>();
+            b.Property(t => t.Instructions).HasColumnType("text").IsRequired();
         });
     }
 

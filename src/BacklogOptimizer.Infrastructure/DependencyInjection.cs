@@ -12,7 +12,9 @@ using BacklogOptimizer.Infrastructure.Auth;
 using BacklogOptimizer.Infrastructure.BackgroundServices;
 using BacklogOptimizer.Infrastructure.Embeddings;
 using BacklogOptimizer.Infrastructure.Jira;
+using BacklogOptimizer.Application.Prompts;
 using BacklogOptimizer.Infrastructure.Persistence;
+using BacklogOptimizer.Infrastructure.Prompts;
 using BacklogOptimizer.Infrastructure.Scraping;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -82,6 +84,10 @@ public static class DependencyInjection
         services.AddScoped<ReprioritizationAnalyzer>();
         services.AddScoped<FeatureSuggestionAnalyzer>();
         services.AddScoped<Scraping.FeatureExtractor>();
+
+        services.AddSingleton<PromptResources>();
+        services.AddScoped<IPromptService, PromptService>();
+        services.AddHostedService<PromptSeeder>();
 
         AddAuth(services, configuration);
 

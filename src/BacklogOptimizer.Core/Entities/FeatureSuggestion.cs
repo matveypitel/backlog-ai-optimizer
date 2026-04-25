@@ -11,7 +11,26 @@ public class FeatureSuggestion : BaseEntity
     public string Tags { get; private set; }
     public string Reasoning { get; private set; }
     public string CompetitorEvidence { get; private set; }
+    public string BusinessValue { get; private set; }
+    public string EstimatedImpact { get; private set; }
+    public string UserStories { get; private set; }
+    public string AcceptanceCriteria { get; private set; }
     public DateTime AnalyzedAt { get; private set; }
+
+    private FeatureSuggestion()
+    {
+        Title = string.Empty;
+        Description = string.Empty;
+        IssueType = string.Empty;
+        SuggestedPriority = string.Empty;
+        Tags = "[]";
+        Reasoning = string.Empty;
+        CompetitorEvidence = string.Empty;
+        BusinessValue = string.Empty;
+        EstimatedImpact = string.Empty;
+        UserStories = "[]";
+        AcceptanceCriteria = "[]";
+    }
 
     public FeatureSuggestion(
         string title,
@@ -20,7 +39,11 @@ public class FeatureSuggestion : BaseEntity
         string suggestedPriority,
         string tags,
         string reasoning,
-        string competitorEvidence)
+        string competitorEvidence,
+        string businessValue,
+        string estimatedImpact,
+        string userStories,
+        string acceptanceCriteria)
     {
         Title = title;
         Description = description;
@@ -29,6 +52,10 @@ public class FeatureSuggestion : BaseEntity
         Tags = tags;
         Reasoning = reasoning;
         CompetitorEvidence = competitorEvidence;
+        BusinessValue = businessValue;
+        EstimatedImpact = estimatedImpact;
+        UserStories = userStories;
+        AcceptanceCriteria = acceptanceCriteria;
         AnalyzedAt = DateTime.UtcNow;
     }
 
@@ -38,7 +65,11 @@ public class FeatureSuggestion : BaseEntity
         string suggestedPriority,
         string tags,
         string reasoning,
-        string competitorEvidence)
+        string competitorEvidence,
+        string businessValue,
+        string estimatedImpact,
+        string userStories,
+        string acceptanceCriteria)
     {
         Description = description;
         IssueType = issueType;
@@ -46,6 +77,10 @@ public class FeatureSuggestion : BaseEntity
         Tags = tags;
         Reasoning = reasoning;
         CompetitorEvidence = competitorEvidence;
+        BusinessValue = businessValue;
+        EstimatedImpact = estimatedImpact;
+        UserStories = userStories;
+        AcceptanceCriteria = acceptanceCriteria;
         AnalyzedAt = DateTime.UtcNow;
     }
 }

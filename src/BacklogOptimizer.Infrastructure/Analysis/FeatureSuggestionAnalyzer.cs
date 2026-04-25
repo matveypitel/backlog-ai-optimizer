@@ -3,6 +3,7 @@ using System.Text.Json;
 
 using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Application.Embeddings;
+using BacklogOptimizer.Application.Prompts;
 using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Core.Entities;
 using BacklogOptimizer.Infrastructure.Analysis.Dto;
@@ -16,15 +17,6 @@ namespace BacklogOptimizer.Infrastructure.Analysis;
 
 internal sealed class FeatureSuggestionAnalyzer
 {
-    private const string SystemPrompt =
-        """
-        You are a product management expert identifying competitive feature gaps.
-        You will receive the current product backlog (active items) and a list of competitor features NOT covered by the backlog.
-        For each gap, propose a new backlog item. Each suggestion must be a distinct, actionable feature not already in the backlog.
-        Respond with a JSON object with one key "suggestions" containing an array. Each item matches:
-        {"title": "string", "description": "string", "issue_type": "Story|Task|Epic", "suggested_priority": "Highest|High|Medium|Low|Lowest", "tags": ["string"], "reasoning": "string", "competitor_evidence": "string (competitor feature name + URL)"}
-        """;
-
     private static readonly JsonSerializerOptions ReadOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -33,17 +25,20 @@ internal sealed class FeatureSuggestionAnalyzer
 
     private readonly OpenAiChatClient _chatClient;
     private readonly ApplicationDbContext _dbContext;
+    private readonly IPromptService _promptService;
     private readonly OpenAiSettings _settings;
     private readonly ILogger<FeatureSuggestionAnalyzer> _logger;
 
     public FeatureSuggestionAnalyzer(
         OpenAiChatClient chatClient,
         ApplicationDbContext dbContext,
+        IPromptService promptService,
         IOptions<OpenAiSettings> options,
         ILogger<FeatureSuggestionAnalyzer> logger)
     {
         _chatClient = chatClient;
         _dbContext = dbContext;
+        _promptService = promptService;
         _settings = options.Value;
         _logger = logger;
     }
@@ -78,6 +73,8 @@ internal sealed class FeatureSuggestionAnalyzer
         var existing = await _dbContext.FeatureSuggestions.ToListAsync(cancellationToken);
         var existingByTitle = existing.ToDictionary(f => f.Title, f => f, StringComparer.OrdinalIgnoreCase);
 
+        var systemPrompt = await _promptService.BuildSystemPromptAsync(PromptType.FeatureSuggestion, cancellationToken);
+
         var batchSize = Math.Max(1, _settings.FeatureSuggestionBatchSize);
         var errors = new List<string>();
         var suggestionsGenerated = 0;
@@ -97,7 +94,7 @@ internal sealed class FeatureSuggestionAnalyzer
             string json;
             try
             {
-                json = await _chatClient.CompleteAsync(_settings.CompletionModel, SystemPrompt, userPrompt, cancellationToken);
+                json = await _chatClient.CompleteAsync(_settings.CompletionModel, systemPrompt, userPrompt, cancellationToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -121,11 +118,23 @@ internal sealed class FeatureSuggestionAnalyzer
 
             foreach (var item in wrapper.Suggestions)
             {
-                var tags = JsonSerializer.Serialize(item.Tags);
+                var tags = JsonSerializer.Serialize(item.Tags ?? []);
+                var userStories = JsonSerializer.Serialize(item.UserStories ?? []);
+                var acceptanceCriteria = JsonSerializer.Serialize(item.AcceptanceCriteria ?? []);
 
                 if (existingByTitle.TryGetValue(item.Title, out var current))
                 {
-                    current.Update(item.Description, item.IssueType, item.SuggestedPriority, tags, item.Reasoning, item.CompetitorEvidence);
+                    current.Update(
+                        item.Description,
+                        item.IssueType,
+                        item.SuggestedPriority,
+                        tags,
+                        item.Reasoning,
+                        item.CompetitorEvidence,
+                        item.BusinessValue ?? string.Empty,
+                        item.EstimatedImpact ?? string.Empty,
+                        userStories,
+                        acceptanceCriteria);
                 }
                 else
                 {
@@ -136,7 +145,11 @@ internal sealed class FeatureSuggestionAnalyzer
                         item.SuggestedPriority,
                         tags,
                         item.Reasoning,
-                        item.CompetitorEvidence);
+                        item.CompetitorEvidence,
+                        item.BusinessValue ?? string.Empty,
+                        item.EstimatedImpact ?? string.Empty,
+                        userStories,
+                        acceptanceCriteria);
                     _dbContext.FeatureSuggestions.Add(added);
                     existingByTitle[item.Title] = added;
                 }

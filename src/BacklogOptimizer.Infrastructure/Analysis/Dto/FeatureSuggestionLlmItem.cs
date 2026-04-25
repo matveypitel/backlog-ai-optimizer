@@ -7,6 +7,10 @@ internal sealed record FeatureSuggestionLlmItem(
     string SuggestedPriority,
     string[] Tags,
     string Reasoning,
-    string CompetitorEvidence);
+    string CompetitorEvidence,
+    string BusinessValue,
+    string EstimatedImpact,
+    string[] UserStories,
+    string[] AcceptanceCriteria);
 
 internal sealed record FeatureSuggestionsWrapper(FeatureSuggestionLlmItem[] Suggestions);
