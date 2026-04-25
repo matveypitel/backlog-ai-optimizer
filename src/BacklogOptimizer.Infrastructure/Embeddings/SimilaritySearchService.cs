@@ -17,7 +17,7 @@ internal sealed class SimilaritySearchService : ISimilaritySearchService
         _dbContext = dbContext;
     }
 
-    public async Task<Result<IReadOnlyList<SimilarityMatch>>> FindSimilarPagesAsync(
+    public async Task<Result<IReadOnlyList<SimilarityMatch>>> FindSimilarFeaturesAsync(
         string jiraKey,
         int topN,
         CancellationToken cancellationToken = default)
@@ -34,18 +34,21 @@ internal sealed class SimilaritySearchService : ISimilaritySearchService
 
         var issueVector = issue.Embedding.Vector;
 
-        var matches = await _dbContext.ScrapedPageEmbeddings
-            .Include(e => e.ScrapedPage)
+        var matches = await _dbContext.CompetitorFeatureEmbeddings
+            .Include(e => e.CompetitorFeature)
+                .ThenInclude(f => f.ScrapedPage)
             .Select(e => new
             {
-                e.ScrapedPageId,
-                e.ScrapedPage.Url,
-                e.ScrapedPage.Title,
+                e.CompetitorFeatureId,
+                e.CompetitorFeature.Name,
+                e.CompetitorFeature.Category,
+                e.CompetitorFeature.ScrapedPageId,
+                Url = e.CompetitorFeature.ScrapedPage.Url,
                 Distance = e.Vector.CosineDistance(issueVector)
             })
             .OrderBy(x => x.Distance)
             .Take(topN)
-            .Select(x => new SimilarityMatch(x.ScrapedPageId, x.Url, x.Title, 1.0 - x.Distance))
+            .Select(x => new SimilarityMatch(x.CompetitorFeatureId, x.Name, x.Category, x.ScrapedPageId, x.Url, 1.0 - x.Distance))
             .ToListAsync(cancellationToken);
 
         return Result<IReadOnlyList<SimilarityMatch>>.Success(matches.AsReadOnly());

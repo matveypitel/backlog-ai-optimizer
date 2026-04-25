@@ -2,6 +2,7 @@ using BacklogOptimizer.Application.Scraping;
 using BacklogOptimizer.Application.Settings;
 using BacklogOptimizer.Core.Entities;
 using BacklogOptimizer.Infrastructure.Persistence;
+using BacklogOptimizer.Infrastructure.Scraping;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -99,24 +100,43 @@ internal sealed class ScrapingWorker : BackgroundService
                 Headless = _scrapingSettings.Headless
             });
 
-            var page = await browser.NewPageAsync();
-            await page.GotoAsync(job.Url, new PageGotoOptions
+            var browserPage = await browser.NewPageAsync();
+            await browserPage.GotoAsync(job.Url, new PageGotoOptions
             {
                 WaitUntil = WaitUntilState.NetworkIdle,
                 Timeout = _scrapingSettings.Timeout
             });
 
-            var title = await page.TitleAsync();
-            var htmlContent = await page.ContentAsync();
-            var extractedText = await page.InnerTextAsync("body");
+            var title = await browserPage.TitleAsync();
+            var htmlContent = await browserPage.ContentAsync();
+            var extractedText = await browserPage.InnerTextAsync("body");
 
             var existing = await dbContext.ScrapedPages
                 .FirstOrDefaultAsync(p => p.Url == job.Url, cancellationToken);
 
+            ScrapedPage scrapedPage;
             if (existing is not null)
+            {
                 existing.Update(htmlContent, title, extractedText);
+                scrapedPage = existing;
+            }
             else
-                await dbContext.ScrapedPages.AddAsync(new ScrapedPage(job.Url, htmlContent, title, extractedText), cancellationToken);
+            {
+                scrapedPage = new ScrapedPage(job.Url, htmlContent, title, extractedText);
+                await dbContext.ScrapedPages.AddAsync(scrapedPage, cancellationToken);
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                var extractor = scope.ServiceProvider.GetRequiredService<FeatureExtractor>();
+                await extractor.ExtractAsync(scrapedPage.Id, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Feature extraction failed for {Url}; scraping itself succeeded", job.Url);
+            }
 
             job.MarkCompleted();
             _logger.LogInformation("Completed scraping job {JobId} for {Url}", job.Id, job.Url);

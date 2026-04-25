@@ -16,7 +16,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<ScrapingJob> ScrapingJobs { get; set; }
     public DbSet<JiraIssue> JiraIssues { get; set; }
     public DbSet<JiraIssueEmbedding> JiraIssueEmbeddings { get; set; }
-    public DbSet<ScrapedPageEmbedding> ScrapedPageEmbeddings { get; set; }
+    public DbSet<CompetitorFeature> CompetitorFeatures { get; set; }
+    public DbSet<CompetitorFeatureEmbedding> CompetitorFeatureEmbeddings { get; set; }
     public DbSet<ReprioritizationSuggestion> ReprioritizationSuggestions { get; set; }
     public DbSet<FeatureSuggestion> FeatureSuggestions { get; set; }
     public DbSet<FeatureSuggestionJob> FeatureSuggestionJobs { get; set; }
@@ -51,12 +52,23 @@ public class ApplicationDbContext : DbContext
             b.Property(e => e.EmbeddedAt).HasColumnType("timestamp with time zone");
         });
 
-        modelBuilder.Entity<ScrapedPageEmbedding>(b =>
+        modelBuilder.Entity<CompetitorFeature>(b =>
         {
-            b.HasKey(e => e.ScrapedPageId);
-            b.HasOne(e => e.ScrapedPage)
-             .WithOne(p => p.Embedding)
-             .HasForeignKey<ScrapedPageEmbedding>(e => e.ScrapedPageId)
+            b.HasOne(f => f.ScrapedPage)
+             .WithMany(p => p.Features)
+             .HasForeignKey(f => f.ScrapedPageId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(f => f.ScrapedPageId);
+            b.Property(f => f.Name).IsRequired();
+            b.Property(f => f.Description).IsRequired();
+        });
+
+        modelBuilder.Entity<CompetitorFeatureEmbedding>(b =>
+        {
+            b.HasKey(e => e.CompetitorFeatureId);
+            b.HasOne(e => e.CompetitorFeature)
+             .WithOne(f => f.Embedding)
+             .HasForeignKey<CompetitorFeatureEmbedding>(e => e.CompetitorFeatureId)
              .OnDelete(DeleteBehavior.Cascade);
             b.Property(e => e.Vector).HasColumnType("vector(1536)");
             b.Property(e => e.EmbeddedAt).HasColumnType("timestamp with time zone");

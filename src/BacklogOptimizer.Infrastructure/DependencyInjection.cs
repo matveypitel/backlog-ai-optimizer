@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<IFeatureSuggestionService, FeatureSuggestionJobService>();
         services.AddScoped<ReprioritizationAnalyzer>();
         services.AddScoped<FeatureSuggestionAnalyzer>();
+        services.AddScoped<Scraping.FeatureExtractor>();
 
         AddAuth(services, configuration);
 

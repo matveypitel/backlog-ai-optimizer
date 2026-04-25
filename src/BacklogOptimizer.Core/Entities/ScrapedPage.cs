@@ -9,7 +9,7 @@ public class ScrapedPage : BaseEntity
     public string? Title { get; private set; }
     public string? ExtractedContent { get; private set; }
 
-    public ScrapedPageEmbedding? Embedding { get; private set; }
+    public ICollection<CompetitorFeature> Features { get; private set; } = [];
 
     public ScrapedPage(string url, string htmlContent, string? title, string? extractedContent)
     {

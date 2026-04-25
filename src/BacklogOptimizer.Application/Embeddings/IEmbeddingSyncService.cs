@@ -5,5 +5,5 @@ namespace BacklogOptimizer.Application.Embeddings;
 public interface IEmbeddingSyncService
 {
     Task<Result<EmbeddingSyncResult>> SyncJiraEmbeddingsAsync(CancellationToken cancellationToken = default);
-    Task<Result<EmbeddingSyncResult>> SyncPageEmbeddingsAsync(CancellationToken cancellationToken = default);
+    Task<Result<EmbeddingSyncResult>> SyncFeatureEmbeddingsAsync(CancellationToken cancellationToken = default);
 }

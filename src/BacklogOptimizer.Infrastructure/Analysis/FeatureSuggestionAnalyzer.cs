@@ -19,10 +19,10 @@ internal sealed class FeatureSuggestionAnalyzer
     private const string SystemPrompt =
         """
         You are a product management expert identifying competitive feature gaps.
-        Given the current product backlog and competitor pages NOT covered by the backlog, identify new features that should be added.
-        Each suggestion must be a distinct, actionable feature not already in the backlog.
+        You will receive the current product backlog (active items) and a list of competitor features NOT covered by the backlog.
+        For each gap, propose a new backlog item. Each suggestion must be a distinct, actionable feature not already in the backlog.
         Respond with a JSON object with one key "suggestions" containing an array. Each item matches:
-        {"title": "string", "description": "string", "issue_type": "Story|Task|Epic", "suggested_priority": "Highest|High|Medium|Low|Lowest", "tags": ["string"], "reasoning": "string", "competitor_evidence": "string"}
+        {"title": "string", "description": "string", "issue_type": "Story|Task|Epic", "suggested_priority": "Highest|High|Medium|Low|Lowest", "tags": ["string"], "reasoning": "string", "competitor_evidence": "string (competitor feature name + URL)"}
         """;
 
     private static readonly JsonSerializerOptions ReadOptions = new()
@@ -57,17 +57,18 @@ internal sealed class FeatureSuggestionAnalyzer
             .Where(e => !completedStatuses.Contains(e.JiraIssue.Status))
             .ToListAsync(cancellationToken);
 
-        var pageEmbeddings = await _dbContext.ScrapedPageEmbeddings
-            .Include(e => e.ScrapedPage)
+        var featureEmbeddings = await _dbContext.CompetitorFeatureEmbeddings
+            .Include(e => e.CompetitorFeature)
+                .ThenInclude(f => f.ScrapedPage)
             .ToListAsync(cancellationToken);
 
-        var gapPages = pageEmbeddings
-            .Where(pe => issueEmbeddings.Count == 0 || issueEmbeddings
-                .All(ie => CosineSimilarity(pe.Vector, ie.Vector) < _settings.CoverageGapThreshold))
-            .Select(pe => pe.ScrapedPage)
+        var gapFeatures = featureEmbeddings
+            .Where(fe => issueEmbeddings.Count == 0 || issueEmbeddings
+                .All(ie => CosineSimilarity(fe.Vector, ie.Vector) < _settings.CoverageGapThreshold))
+            .Select(fe => fe.CompetitorFeature)
             .ToList();
 
-        if (gapPages.Count == 0)
+        if (gapFeatures.Count == 0)
             return new FeatureSuggestionResult(0, 0, []);
 
         var backlogSummary = issueEmbeddings
@@ -81,14 +82,14 @@ internal sealed class FeatureSuggestionAnalyzer
         var errors = new List<string>();
         var suggestionsGenerated = 0;
 
-        for (var offset = 0; offset < gapPages.Count; offset += batchSize)
+        for (var offset = 0; offset < gapFeatures.Count; offset += batchSize)
         {
-            var batch = gapPages.Skip(offset).Take(batchSize).ToList();
+            var batch = gapFeatures.Skip(offset).Take(batchSize).ToList();
             var batchNumber = offset / batchSize + 1;
-            var batchCount = (gapPages.Count + batchSize - 1) / batchSize;
+            var batchCount = (gapFeatures.Count + batchSize - 1) / batchSize;
 
             _logger.LogInformation(
-                "Feature suggestion batch {BatchNumber}/{BatchCount} ({BatchSize} pages)",
+                "Feature suggestion batch {BatchNumber}/{BatchCount} ({BatchSize} features)",
                 batchNumber, batchCount, batch.Count);
 
             var userPrompt = BuildUserPrompt(backlogSummary, batch);
@@ -146,7 +147,7 @@ internal sealed class FeatureSuggestionAnalyzer
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new FeatureSuggestionResult(gapPages.Count, suggestionsGenerated, errors);
+        return new FeatureSuggestionResult(gapFeatures.Count, suggestionsGenerated, errors);
     }
 
     private static double CosineSimilarity(Pgvector.Vector a, Pgvector.Vector b)
@@ -163,7 +164,7 @@ internal sealed class FeatureSuggestionAnalyzer
         return dot / (Math.Sqrt(magA) * Math.Sqrt(magB));
     }
 
-    private static string BuildUserPrompt(IEnumerable<string> backlogSummary, IEnumerable<ScrapedPage> gapPages)
+    private static string BuildUserPrompt(IEnumerable<string> backlogSummary, IEnumerable<CompetitorFeature> gapFeatures)
     {
         var sb = new StringBuilder();
         sb.AppendLine("## Current Backlog (active items)");
@@ -171,16 +172,16 @@ internal sealed class FeatureSuggestionAnalyzer
             sb.AppendLine(item);
 
         sb.AppendLine();
-        sb.AppendLine("## Competitor Pages Not Covered by Backlog");
+        sb.AppendLine("## Competitor Features Not Covered by Backlog");
 
-        foreach (var page in gapPages)
+        foreach (var feature in gapFeatures)
         {
-            sb.AppendLine($"URL: {page.Url}");
-            if (!string.IsNullOrWhiteSpace(page.Title))
-                sb.AppendLine($"Title: {page.Title}");
-            if (!string.IsNullOrWhiteSpace(page.ExtractedContent))
-                sb.AppendLine($"Content: {page.ExtractedContent[..Math.Min(500, page.ExtractedContent.Length)]}");
-            sb.AppendLine();
+            sb.Append("- ");
+            if (!string.IsNullOrWhiteSpace(feature.Category))
+                sb.Append('[').Append(feature.Category).Append("] ");
+            sb.AppendLine(feature.Name);
+            sb.AppendLine($"  Description: {feature.Description}");
+            sb.AppendLine($"  Source: {feature.ScrapedPage.Url}");
         }
 
         return sb.ToString();

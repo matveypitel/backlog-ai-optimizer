@@ -19,13 +19,13 @@ internal sealed class ReprioritizationAnalyzer
     private const string SystemPrompt =
         """
         You are a product management expert analyzing competitive intelligence.
-        You will receive a list of Jira backlog items, each with its most similar competitor feature pages.
+        You will receive a list of Jira backlog items, each with its most similar competitor features.
         For each item, evaluate whether the current priority needs adjustment.
         Consider: market pressure indicated by competitor activity, feature parity gaps, and user impact signals.
         Only suggest a priority change when there is a clear, concrete reason based on competitor evidence.
         If the current priority is already correct and no change is needed, return "suggested_priority": null for that item.
         Respond with a JSON object matching exactly this schema:
-        {"items": [{"jira_key": "string", "suggested_priority": "string (Highest|High|Medium|Low|Lowest) or null", "reasoning": "string", "competitor_evidence": "string (URL + quote)", "confidence_score": number (0.0-1.0)}]}
+        {"items": [{"jira_key": "string", "suggested_priority": "string (Highest|High|Medium|Low|Lowest) or null", "reasoning": "string", "competitor_evidence": "string (feature name + URL)", "confidence_score": number (0.0-1.0)}]}
         Include exactly one entry per input item, keyed by its jira_key.
         """;
 
@@ -62,43 +62,44 @@ internal sealed class ReprioritizationAnalyzer
             .Where(j => j.Embedding != null)
             .ToListAsync(cancellationToken);
 
-        var pageEmbeddings = await _dbContext.ScrapedPageEmbeddings
-            .Include(e => e.ScrapedPage)
+        var featureEmbeddings = await _dbContext.CompetitorFeatureEmbeddings
+            .Include(e => e.CompetitorFeature)
+                .ThenInclude(f => f.ScrapedPage)
             .ToListAsync(cancellationToken);
 
         var existing = await _dbContext.ReprioritizationSuggestions.ToListAsync(cancellationToken);
         var existingByKey = existing.ToDictionary(s => s.JiraKey, s => s, StringComparer.OrdinalIgnoreCase);
 
-        var issuesWithPages = new List<(JiraIssue Issue, List<(ScrapedPage Page, double Score)> Pages)>();
+        var issuesWithFeatures = new List<(JiraIssue Issue, List<(CompetitorFeature Feature, double Score)> Features)>();
         var skippedCount = 0;
 
         foreach (var issue in issues)
         {
-            var topPages = pageEmbeddings
-                .Select(e => (e.ScrapedPage, Score: CosineSimilarity(e.Vector, issue.Embedding!.Vector)))
+            var topFeatures = featureEmbeddings
+                .Select(e => (e.CompetitorFeature, Score: CosineSimilarity(e.Vector, issue.Embedding!.Vector)))
                 .Where(x => x.Score > _settings.ReprioritizationSimilarityThreshold)
                 .OrderByDescending(x => x.Score)
-                .Take(_settings.ReprioritizationSimilarPagesTopN)
+                .Take(_settings.ReprioritizationSimilarFeaturesTopN)
                 .ToList();
 
-            if (topPages.Count == 0)
+            if (topFeatures.Count == 0)
             {
                 skippedCount++;
                 continue;
             }
 
-            issuesWithPages.Add((issue, topPages));
+            issuesWithFeatures.Add((issue, topFeatures));
         }
 
         var batchSize = Math.Max(1, _settings.ReprioritizationBatchSize);
         var errors = new List<string>();
         var analyzedCount = 0;
 
-        for (var offset = 0; offset < issuesWithPages.Count; offset += batchSize)
+        for (var offset = 0; offset < issuesWithFeatures.Count; offset += batchSize)
         {
-            var batch = issuesWithPages.Skip(offset).Take(batchSize).ToList();
+            var batch = issuesWithFeatures.Skip(offset).Take(batchSize).ToList();
             var batchNumber = offset / batchSize + 1;
-            var batchCount = (issuesWithPages.Count + batchSize - 1) / batchSize;
+            var batchCount = (issuesWithFeatures.Count + batchSize - 1) / batchSize;
 
             _logger.LogInformation(
                 "Reprioritization batch {BatchNumber}/{BatchCount} ({BatchSize} issues)",
@@ -152,10 +153,7 @@ internal sealed class ReprioritizationAnalyzer
                 if (existingByKey.TryGetValue(issue.JiraKey, out var current))
                 {
                     if (current.CurrentPriority == item.SuggestedPriority)
-                    {
-                        // No change from current priority, so skip updating
                         continue;
-                    }
 
                     current.Update(
                         currentPriority,
@@ -201,11 +199,11 @@ internal sealed class ReprioritizationAnalyzer
     }
 
     private static string BuildUserPrompt(
-        IEnumerable<(JiraIssue Issue, List<(ScrapedPage Page, double Score)> Pages)> batch)
+        IEnumerable<(JiraIssue Issue, List<(CompetitorFeature Feature, double Score)> Features)> batch)
     {
         var sb = new StringBuilder();
 
-        foreach (var (issue, pages) in batch)
+        foreach (var (issue, features) in batch)
         {
             sb.AppendLine($"## Backlog Item {issue.JiraKey}");
             sb.AppendLine($"Key: {issue.JiraKey}");
@@ -216,16 +214,16 @@ internal sealed class ReprioritizationAnalyzer
                 sb.AppendLine($"Description: {issue.Description[..Math.Min(500, issue.Description.Length)]}");
 
             sb.AppendLine();
-            sb.AppendLine("### Competitor Pages (most similar)");
+            sb.AppendLine("### Similar Competitor Features");
 
-            foreach (var (page, score) in pages)
+            foreach (var (feature, score) in features)
             {
-                sb.AppendLine($"URL: {page.Url} (similarity: {score:F2})");
-                if (!string.IsNullOrWhiteSpace(page.Title))
-                    sb.AppendLine($"Title: {page.Title}");
-                if (!string.IsNullOrWhiteSpace(page.ExtractedContent))
-                    sb.AppendLine($"Content: {page.ExtractedContent[..Math.Min(1000, page.ExtractedContent.Length)]}");
-                sb.AppendLine();
+                sb.Append("- ");
+                if (!string.IsNullOrWhiteSpace(feature.Category))
+                    sb.Append('[').Append(feature.Category).Append("] ");
+                sb.Append(feature.Name).Append(" (similarity: ").Append(score.ToString("F2")).AppendLine(")");
+                sb.AppendLine($"  Description: {feature.Description}");
+                sb.AppendLine($"  Source: {feature.ScrapedPage.Url}");
             }
 
             sb.AppendLine();

@@ -31,12 +31,12 @@ public sealed class EmbeddingsController : ControllerBase
         return result.ToActionResult(r => Ok(new EmbeddingSyncResponse(r.EmbeddedCount, r.SkippedCount, r.Errors)));
     }
 
-    [HttpPost("sync/pages")]
+    [HttpPost("sync/features")]
     [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(typeof(EmbeddingSyncResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> SyncPages(CancellationToken cancellationToken)
+    public async Task<IActionResult> SyncFeatures(CancellationToken cancellationToken)
     {
-        var result = await _syncService.SyncPageEmbeddingsAsync(cancellationToken);
+        var result = await _syncService.SyncFeatureEmbeddingsAsync(cancellationToken);
         return result.ToActionResult(r => Ok(new EmbeddingSyncResponse(r.EmbeddedCount, r.SkippedCount, r.Errors)));
     }
 
@@ -45,7 +45,7 @@ public sealed class EmbeddingsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Search([FromBody] EmbeddingSearchRequest request, CancellationToken cancellationToken)
     {
-        var result = await _searchService.FindSimilarPagesAsync(request.JiraKey, request.TopN, cancellationToken);
+        var result = await _searchService.FindSimilarFeaturesAsync(request.JiraKey, request.TopN, cancellationToken);
         return result.ToActionResult();
     }
 }

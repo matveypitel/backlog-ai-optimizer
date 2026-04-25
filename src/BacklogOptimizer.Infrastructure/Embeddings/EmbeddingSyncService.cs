@@ -77,21 +77,21 @@ internal sealed class EmbeddingSyncService : IEmbeddingSyncService
         return new EmbeddingSyncResult(embeddedCount, skippedCount, errors.AsReadOnly());
     }
 
-    public async Task<Result<EmbeddingSyncResult>> SyncPageEmbeddingsAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<EmbeddingSyncResult>> SyncFeatureEmbeddingsAsync(CancellationToken cancellationToken = default)
     {
         var model = _settings.EmbeddingModel;
 
-        var pages = await _dbContext.ScrapedPages
-            .Include(p => p.Embedding)
+        var features = await _dbContext.CompetitorFeatures
+            .Include(f => f.Embedding)
             .ToListAsync(cancellationToken);
 
         var embeddedCount = 0;
         var skippedCount = 0;
         var errors = new List<string>();
 
-        foreach (var page in pages)
+        foreach (var feature in features)
         {
-            if (page.Embedding is not null && page.Embedding.EmbeddedAt >= (page.UpdatedAt ?? page.CreatedAt))
+            if (feature.Embedding is not null && feature.Embedding.EmbeddedAt >= feature.ExtractedAt)
             {
                 skippedCount++;
                 continue;
@@ -99,22 +99,25 @@ internal sealed class EmbeddingSyncService : IEmbeddingSyncService
 
             try
             {
-                var text = $"{page.Title ?? string.Empty}\n{page.ExtractedContent ?? string.Empty}";
+                var text = string.IsNullOrWhiteSpace(feature.Category)
+                    ? $"{feature.Name}\n{feature.Description}"
+                    : $"[{feature.Category}] {feature.Name}\n{feature.Description}";
+
                 var floats = await _client.GetEmbeddingAsync(text, model, cancellationToken);
                 var vector = new Vector(floats);
 
-                if (page.Embedding is null)
-                    _dbContext.ScrapedPageEmbeddings.Add(new ScrapedPageEmbedding(page.Id, model, vector));
+                if (feature.Embedding is null)
+                    _dbContext.CompetitorFeatureEmbeddings.Add(new CompetitorFeatureEmbedding(feature.Id, model, vector));
                 else
-                    page.Embedding.Update(model, vector);
+                    feature.Embedding.Update(model, vector);
 
                 await _dbContext.SaveChangesAsync(cancellationToken);
                 embeddedCount++;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to embed scraped page {Url}", page.Url);
-                errors.Add($"{page.Url}: {ex.Message}");
+                _logger.LogWarning(ex, "Failed to embed competitor feature {Name}", feature.Name);
+                errors.Add($"{feature.Name}: {ex.Message}");
                 _dbContext.ChangeTracker.Clear();
             }
         }

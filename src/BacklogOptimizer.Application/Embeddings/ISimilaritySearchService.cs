@@ -4,7 +4,7 @@ namespace BacklogOptimizer.Application.Embeddings;
 
 public interface ISimilaritySearchService
 {
-    Task<Result<IReadOnlyList<SimilarityMatch>>> FindSimilarPagesAsync(
+    Task<Result<IReadOnlyList<SimilarityMatch>>> FindSimilarFeaturesAsync(
         string jiraKey,
         int topN,
         CancellationToken cancellationToken = default);

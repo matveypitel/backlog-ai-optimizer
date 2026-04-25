@@ -96,8 +96,8 @@ internal sealed class FeatureSuggestionWorker : BackgroundService
             {
                 job.MarkCompleted();
                 _logger.LogInformation(
-                    "Completed feature suggestion job {JobId}: {Gaps} gap pages, {Count} suggestions",
-                    job.Id, result.Value!.GapPagesFound, result.Value.SuggestionsGenerated);
+                    "Completed feature suggestion job {JobId}: {Gaps} gap features, {Count} suggestions",
+                    job.Id, result.Value!.GapFeaturesFound, result.Value.SuggestionsGenerated);
             }
             else
             {

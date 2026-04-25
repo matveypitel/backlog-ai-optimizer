@@ -2,20 +2,20 @@ using Pgvector;
 
 namespace BacklogOptimizer.Core.Entities;
 
-public class ScrapedPageEmbedding
+public class CompetitorFeatureEmbedding
 {
-    public Guid ScrapedPageId { get; private set; }
+    public Guid CompetitorFeatureId { get; private set; }
     public string ModelName { get; private set; } = string.Empty;
     public Vector Vector { get; private set; } = null!;
     public DateTime EmbeddedAt { get; private set; }
 
-    public ScrapedPage ScrapedPage { get; private set; } = null!;
+    public CompetitorFeature CompetitorFeature { get; private set; } = null!;
 
-    private ScrapedPageEmbedding() { }
+    private CompetitorFeatureEmbedding() { }
 
-    public ScrapedPageEmbedding(Guid scrapedPageId, string modelName, Vector vector)
+    public CompetitorFeatureEmbedding(Guid competitorFeatureId, string modelName, Vector vector)
     {
-        ScrapedPageId = scrapedPageId;
+        CompetitorFeatureId = competitorFeatureId;
         ModelName = modelName;
         Vector = vector;
         EmbeddedAt = DateTime.UtcNow;

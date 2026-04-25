@@ -1,3 +1,9 @@
 namespace BacklogOptimizer.Application.Embeddings;
 
-public record SimilarityMatch(Guid ScrapedPageId, string Url, string? Title, double Score);
+public record SimilarityMatch(
+    Guid CompetitorFeatureId,
+    string Name,
+    string? Category,
+    Guid ScrapedPageId,
+    string Url,
+    double Score);
