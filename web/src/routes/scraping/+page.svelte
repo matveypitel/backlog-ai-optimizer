@@ -47,11 +47,15 @@
   });
 </script>
 
-<svelte:head><title>Scraping · Admin</title></svelte:head>
+<svelte:head><title>Scraping · Backlog AI</title></svelte:head>
 
 <header class="page-head">
-  <span class="eyebrow">Admin / Scraping</span>
+  <span class="eyebrow">Scraping</span>
   <h1>Queue a competitor page.</h1>
+  <p class="lede">
+    Submit a URL and the worker will scrape it, extract features, and embed them — usually within a
+    minute. Track progress below.
+  </p>
 </header>
 
 <form onsubmit={enqueue} class="form">
@@ -90,7 +94,7 @@
 {/if}
 
 <style>
-  .page-head { margin-bottom: var(--space-5); }
+  .page-head { margin-bottom: var(--space-5); max-width: var(--reading-width); }
   .eyebrow {
     font-family: var(--font-mono);
     font-size: 0.75rem;
@@ -100,6 +104,7 @@
     display: block;
     margin-bottom: var(--space-2);
   }
+  .lede { color: var(--ink-soft); }
   .form { margin-bottom: var(--space-6); }
   .row {
     display: flex;

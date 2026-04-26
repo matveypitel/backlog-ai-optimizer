@@ -1,6 +1,5 @@
 using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
-using BacklogOptimizer.Application.Auth;
 using BacklogOptimizer.Application.Scraping;
 using BacklogOptimizer.Infrastructure.Persistence;
 
@@ -25,7 +24,6 @@ public sealed class ScrapingController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> EnqueueScrape([FromBody] ScrapeRequest request, CancellationToken cancellationToken)
@@ -35,7 +33,6 @@ public sealed class ScrapingController : ControllerBase
     }
 
     [HttpGet("jobs")]
-    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(typeof(IReadOnlyList<ScrapingJobResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetJobs([FromQuery] int take = 50, CancellationToken cancellationToken = default)
     {

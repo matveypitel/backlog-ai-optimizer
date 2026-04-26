@@ -13,12 +13,11 @@
     { href: '/suggestions', label: 'Suggestions' },
     { href: '/reprioritization', label: 'Reprioritization' },
     { href: '/competitors', label: 'Competitors' },
-    { href: '/jira', label: 'Jira' },
-    { href: '/search', label: 'Search' }
+    { href: '/scraping', label: 'Scraping' },
+    { href: '/jira', label: 'Jira' }
   ];
 
   const adminLinks = [
-    { href: '/admin/scraping', label: 'Scraping' },
     { href: '/admin/sync', label: 'Sync' },
     { href: '/admin/embeddings', label: 'Embeddings' },
     { href: '/admin/prompts', label: 'Prompts' },
