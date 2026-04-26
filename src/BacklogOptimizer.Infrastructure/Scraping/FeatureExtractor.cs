@@ -26,6 +26,7 @@ internal sealed class FeatureExtractor
     private readonly OpenAiChatClient _chatClient;
     private readonly ApplicationDbContext _dbContext;
     private readonly IPromptService _promptService;
+    private readonly IEmbeddingSyncService _embeddingSyncService;
     private readonly OpenAiSettings _settings;
     private readonly ILogger<FeatureExtractor> _logger;
 
@@ -33,12 +34,14 @@ internal sealed class FeatureExtractor
         OpenAiChatClient chatClient,
         ApplicationDbContext dbContext,
         IPromptService promptService,
+        IEmbeddingSyncService embeddingSyncService,
         IOptions<OpenAiSettings> settings,
         ILogger<FeatureExtractor> logger)
     {
         _chatClient = chatClient;
         _dbContext = dbContext;
         _promptService = promptService;
+        _embeddingSyncService = embeddingSyncService;
         _settings = settings.Value;
         _logger = logger;
     }
@@ -93,5 +96,26 @@ internal sealed class FeatureExtractor
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Extracted {Count} features for {Url}", wrapper.Features.Length, page.Url);
+
+        try
+        {
+            var embeddingResult = await _embeddingSyncService.SyncFeatureEmbeddingsAsync(cancellationToken);
+            if (embeddingResult.IsSuccess)
+            {
+                _logger.LogInformation(
+                    "Auto-embedded {Embedded} feature(s), skipped {Skipped}",
+                    embeddingResult.Value!.EmbeddedCount, embeddingResult.Value.SkippedCount);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Auto-embedding after feature extraction reported error: {Error}",
+                    embeddingResult.Error!.Description);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "Auto-embedding after feature extraction failed for {Url}", page.Url);
+        }
     }
 }

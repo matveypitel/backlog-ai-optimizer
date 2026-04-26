@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BacklogOptimizer.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/embeddings")]
 [Authorize]
 public sealed class EmbeddingsController : ControllerBase
 {

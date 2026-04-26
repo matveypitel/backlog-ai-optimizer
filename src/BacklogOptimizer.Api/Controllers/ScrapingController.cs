@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace BacklogOptimizer.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/scraping")]
 [Authorize]
 public sealed class ScrapingController : ControllerBase
 {

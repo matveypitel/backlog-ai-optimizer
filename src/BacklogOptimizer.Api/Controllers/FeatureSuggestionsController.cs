@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace BacklogOptimizer.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/feature-suggestions")]
 [Authorize]
 public sealed class FeatureSuggestionsController : ControllerBase
 {

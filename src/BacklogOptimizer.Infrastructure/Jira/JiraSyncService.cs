@@ -1,5 +1,6 @@
 using System.Globalization;
 
+using BacklogOptimizer.Application.Embeddings;
 using BacklogOptimizer.Application.Jira;
 using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Core.Entities;
@@ -16,17 +17,20 @@ internal sealed class JiraSyncService : IJiraSyncService
 {
     private readonly JiraApiClient _apiClient;
     private readonly ApplicationDbContext _dbContext;
+    private readonly IEmbeddingSyncService _embeddingSyncService;
     private readonly JiraSettings _settings;
     private readonly ILogger<JiraSyncService> _logger;
 
     public JiraSyncService(
         JiraApiClient apiClient,
         ApplicationDbContext dbContext,
+        IEmbeddingSyncService embeddingSyncService,
         IOptions<JiraSettings> settings,
         ILogger<JiraSyncService> logger)
     {
         _apiClient = apiClient;
         _dbContext = dbContext;
+        _embeddingSyncService = embeddingSyncService;
         _settings = settings.Value;
         _logger = logger;
     }
@@ -76,6 +80,28 @@ internal sealed class JiraSyncService : IJiraSyncService
                 break;
 
             nextPageToken = page.NextPageToken;
+        }
+
+        if (syncedCount > 0)
+        {
+            try
+            {
+                var embeddingResult = await _embeddingSyncService.SyncJiraEmbeddingsAsync(cancellationToken);
+                if (embeddingResult.IsSuccess && embeddingResult.Value!.Errors.Count > 0)
+                {
+                    foreach (var err in embeddingResult.Value.Errors)
+                        errors.Add($"embedding {err}");
+                }
+                else if (!embeddingResult.IsSuccess)
+                {
+                    errors.Add($"embedding: {embeddingResult.Error!.Description}");
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Auto-embedding after Jira sync failed");
+                errors.Add($"embedding: {ex.Message}");
+            }
         }
 
         return new JiraSyncResult(syncedCount, errors.AsReadOnly());
