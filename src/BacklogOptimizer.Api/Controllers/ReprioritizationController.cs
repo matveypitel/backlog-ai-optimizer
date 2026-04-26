@@ -45,4 +45,17 @@ public sealed class ReprioritizationController : ControllerBase
 
         return Ok(items);
     }
+
+    [HttpGet("jobs/latest")]
+    [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLatestJob(CancellationToken cancellationToken)
+    {
+        var job = await _dbContext.ReprioritizationJobs
+            .OrderByDescending(j => j.CreatedAt)
+            .Select(j => new JobStatusResponse(j.Id, j.Status.ToString(), j.ErrorMessage, j.CreatedAt, j.UpdatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return job is null ? NotFound() : Ok(job);
+    }
 }

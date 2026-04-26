@@ -41,7 +41,30 @@ internal sealed class AuthService : IAuthService
         return _tokenService.Generate(user);
     }
 
-    public async Task<Result<CreatedUserResult>> CreateUserAsync(string email, string password, Role role, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthTokenResult>> RegisterAsync(string email, string password, CancellationToken cancellationToken = default)
+    {
+        var creation = await CreateUserInternalAsync(email, password, Role.User, cancellationToken);
+        if (!creation.IsSuccess)
+            return creation.Error!;
+
+        var user = await _dbContext.Users
+            .FirstAsync(u => u.Id == creation.Value!.Id, cancellationToken);
+
+        return _tokenService.Generate(user);
+    }
+
+    public async Task<Result<CreatedUserResult>> CreateUserAsync(string email, string password, Role role, CancellationToken cancellationToken = default) =>
+        await CreateUserInternalAsync(email, password, role, cancellationToken);
+
+    public async Task<IReadOnlyList<UserSummary>> GetUsersAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Users
+            .OrderBy(u => u.CreatedAt)
+            .Select(u => new UserSummary(u.Id, u.Email, u.Role.ToString(), u.CreatedAt))
+            .ToListAsync(cancellationToken);
+    }
+
+    private async Task<Result<CreatedUserResult>> CreateUserInternalAsync(string email, string password, Role role, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(email))
             return Errors.Auth.EmailRequired;

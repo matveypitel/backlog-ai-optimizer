@@ -47,4 +47,34 @@ public sealed class FeatureSuggestionsController : ControllerBase
 
         return Ok(items);
     }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(FeatureSuggestionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await _dbContext.FeatureSuggestions
+            .Where(f => f.Id == id)
+            .Select(f => new FeatureSuggestionResponse(
+                f.Id, f.Title, f.Description, f.IssueType,
+                f.SuggestedPriority, f.Tags, f.Reasoning,
+                f.CompetitorEvidence, f.BusinessValue, f.EstimatedImpact,
+                f.UserStories, f.AcceptanceCriteria, f.AnalyzedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return item is null ? NotFound() : Ok(item);
+    }
+
+    [HttpGet("jobs/latest")]
+    [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLatestJob(CancellationToken cancellationToken)
+    {
+        var job = await _dbContext.FeatureSuggestionJobs
+            .OrderByDescending(j => j.CreatedAt)
+            .Select(j => new JobStatusResponse(j.Id, j.Status.ToString(), j.ErrorMessage, j.CreatedAt, j.UpdatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return job is null ? NotFound() : Ok(job);
+    }
 }

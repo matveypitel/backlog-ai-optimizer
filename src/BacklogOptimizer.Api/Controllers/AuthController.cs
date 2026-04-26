@@ -1,3 +1,5 @@
+using System.Security.Claims;
+
 using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Auth;
@@ -26,6 +28,42 @@ public sealed class AuthController : ControllerBase
     {
         var result = await _authService.LoginAsync(request.Email, request.Password, cancellationToken);
         return result.ToActionResult();
+    }
+
+    [HttpPost("register")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthTokenResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _authService.RegisterAsync(request.Email, request.Password, cancellationToken);
+        return result.ToActionResult();
+    }
+
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(typeof(MeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult Me()
+    {
+        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email") ?? string.Empty;
+        var role = User.FindFirstValue(ClaimTypes.Role) ?? User.FindFirstValue("role") ?? string.Empty;
+
+        if (!Guid.TryParse(idClaim, out var id))
+            return Unauthorized();
+
+        return Ok(new MeResponse(id, email, role));
+    }
+
+    [HttpGet("users")]
+    [Authorize(Roles = Roles.Admin)]
+    [ProducesResponseType(typeof(IReadOnlyList<UserSummary>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
+    {
+        var users = await _authService.GetUsersAsync(cancellationToken);
+        return Ok(users);
     }
 
     [HttpPost("users")]
