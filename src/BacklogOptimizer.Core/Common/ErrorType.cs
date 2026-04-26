@@ -4,5 +4,6 @@ public enum ErrorType
 {
     NotFound,
     Validation,
-    Unauthorized
+    Unauthorized,
+    Conflict
 }

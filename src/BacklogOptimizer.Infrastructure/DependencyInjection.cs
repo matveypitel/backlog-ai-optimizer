@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.Configure<AnalysisWorkerSettings>(configuration.GetSection(AnalysisWorkerSettings.SectionName));
 
         services.AddScoped<IScrapingService, ScrapingJobService>();
+        services.AddScoped<IScrapingSourceService, ScrapingSourceService>();
         services.AddHostedService<ScrapingWorker>();
         services.AddHostedService<FeatureSuggestionWorker>();
         services.AddHostedService<ReprioritizationWorker>();

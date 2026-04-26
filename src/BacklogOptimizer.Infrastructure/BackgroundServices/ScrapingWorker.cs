@@ -139,6 +139,14 @@ internal sealed class ScrapingWorker : BackgroundService
             }
 
             job.MarkCompleted();
+
+            if (job.SourceId is not null)
+            {
+                var source = await dbContext.ScrapingSources
+                    .FirstOrDefaultAsync(s => s.Id == job.SourceId, cancellationToken);
+                source?.MarkScraped(DateTime.UtcNow);
+            }
+
             _logger.LogInformation("Completed scraping job {JobId} for {Url}", job.Id, job.Url);
         }
         catch (Exception ex)

@@ -72,6 +72,22 @@ export interface ScrapedPage {
   updatedAt: string | null;
 }
 
+export interface ScrapingSource {
+  id: string;
+  url: string;
+  name: string | null;
+  isActive: boolean;
+  lastScrapedAt: string | null;
+  refreshIntervalHours: number | null;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface SyncAllResult {
+  enqueued: number;
+  skipped: number;
+}
+
 export interface ScrapingJob {
   id: string;
   url: string;

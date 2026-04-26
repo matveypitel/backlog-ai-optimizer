@@ -24,6 +24,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ReprioritizationJob> ReprioritizationJobs { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<PromptTemplate> PromptTemplates { get; set; }
+    public DbSet<ScrapingSource> ScrapingSources { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -92,6 +93,13 @@ public class ApplicationDbContext : DbContext
             b.HasIndex(t => t.Type).IsUnique();
             b.Property(t => t.Type).HasConversion<int>();
             b.Property(t => t.Instructions).HasColumnType("text").IsRequired();
+        });
+
+        modelBuilder.Entity<ScrapingSource>(b =>
+        {
+            b.HasIndex(s => s.Url).IsUnique();
+            b.Property(s => s.Url).IsRequired();
+            b.Property(s => s.Name);
         });
     }
 

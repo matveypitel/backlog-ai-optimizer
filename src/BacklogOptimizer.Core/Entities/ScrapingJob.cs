@@ -8,10 +8,12 @@ public class ScrapingJob : BaseEntity
     public ScrapingJobStatus Status { get; private set; } = ScrapingJobStatus.Pending;
     public string? ErrorMessage { get; private set; }
     public int AttemptCount { get; private set; }
+    public Guid? SourceId { get; private set; }
 
-    public ScrapingJob(string url)
+    public ScrapingJob(string url, Guid? sourceId = null)
     {
         Url = url;
+        SourceId = sourceId;
     }
 
     public void IncrementAttemptCount() => AttemptCount++;

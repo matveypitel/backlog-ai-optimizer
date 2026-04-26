@@ -59,6 +59,19 @@ public static class Errors
             "Password must be at least 8 characters long.");
     }
 
+    public static class ScrapingSource
+    {
+        public static Error UrlAlreadyExists(string url) => new(
+            "scraping_source.url_already_exists",
+            ErrorType.Conflict,
+            $"A scraping source with URL '{url}' already exists.");
+
+        public static Error NotFound(Guid id) => new(
+            "scraping_source.not_found",
+            ErrorType.NotFound,
+            $"Scraping source '{id}' was not found.");
+    }
+
     public static class Llm
     {
         public static Error CallFailed(string message) => new(
