@@ -13,8 +13,26 @@
   let items = $state<FeatureSuggestion[]>([]);
   let loading = $state(true);
   let analyzing = $state(false);
+  let applying = $state(new Set<string>());
   let job = $state<JobStatusInfo | null>(null);
   let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+  async function applyOne(event: MouseEvent, id: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    applying = new Set(applying).add(id);
+    try {
+      const result = await suggestionsApi.apply(id);
+      items = items.filter((x) => x.id !== id);
+      toast.success(`Created ${result.jiraKey} in Jira.`);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to create');
+    } finally {
+      const next = new Set(applying);
+      next.delete(id);
+      applying = next;
+    }
+  }
 
   async function load() {
     try {
@@ -100,7 +118,14 @@
         <Card>
           <div class="row">
             <h3>{item.title}</h3>
-            <StatusBadge status={item.suggestedPriority} />
+            <div class="row-right">
+              <StatusBadge status={item.suggestedPriority} />
+              <Button
+                onclick={(e: MouseEvent) => applyOne(e, item.id)}
+                loading={applying.has(item.id)}
+                disabled={applying.has(item.id)}
+              >Create in Jira</Button>
+            </div>
           </div>
           {#if item.businessValue}
             <p class="value">{truncate(item.businessValue, 220)}</p>
@@ -168,6 +193,12 @@
   }
   .row h3 {
     margin: 0;
+  }
+  .row-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
   }
   .value {
     color: var(--ink-soft);

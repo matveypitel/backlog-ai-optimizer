@@ -9,6 +9,7 @@ public sealed record JiraIssueResponse(
     string? Priority,
     string IssueType,
     string? AssigneeEmail,
+    string? JiraUrl,
     DateTime JiraCreatedAt,
     DateTime JiraUpdatedAt,
     DateTime LastSyncedAt);

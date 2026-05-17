@@ -76,7 +76,13 @@
     <tbody>
       {#each items as i}
         <tr>
-          <td class="mono key">{i.jiraKey}</td>
+          <td class="mono key">
+            {#if i.jiraUrl}
+              <a href={i.jiraUrl} target="_blank" rel="noopener">{i.jiraKey}</a>
+            {:else}
+              {i.jiraKey}
+            {/if}
+          </td>
           <td class="summary">{i.summary}</td>
           <td><StatusBadge status={i.status} /></td>
           <td>{#if i.priority}<StatusBadge status={i.priority} />{:else}<span class="dim">—</span>{/if}</td>

@@ -26,6 +26,16 @@ public static class Errors
             "not_found.jira_issue_embedding",
             ErrorType.NotFound,
             $"Jira issue '{jiraKey}' has no embedding. Run sync first.");
+
+        public static Error ReprioritizationSuggestion(string jiraKey) => new(
+            "not_found.reprioritization_suggestion",
+            ErrorType.NotFound,
+            $"Pending reprioritization suggestion for '{jiraKey}' was not found.");
+
+        public static Error FeatureSuggestion(Guid id) => new(
+            "not_found.feature_suggestion",
+            ErrorType.NotFound,
+            $"Pending feature suggestion '{id}' was not found.");
     }
 
     public static class Jira

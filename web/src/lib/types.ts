@@ -107,6 +107,7 @@ export interface JiraIssue {
   priority: string | null;
   issueType: string;
   assigneeEmail: string | null;
+  jiraUrl: string | null;
   jiraCreatedAt: string;
   jiraUpdatedAt: string;
   lastSyncedAt: string;

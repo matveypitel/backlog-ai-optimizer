@@ -7,6 +7,8 @@ using BacklogOptimizer.Application.Embeddings;
 using BacklogOptimizer.Application.Jira;
 using BacklogOptimizer.Application.Scraping;
 using BacklogOptimizer.Application.Settings;
+using BacklogOptimizer.Application.Suggestions;
+using BacklogOptimizer.Infrastructure.Suggestions;
 using BacklogOptimizer.Infrastructure.Analysis;
 using BacklogOptimizer.Infrastructure.Auth;
 using BacklogOptimizer.Infrastructure.BackgroundServices;
@@ -57,6 +59,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IJiraSyncService, JiraSyncService>();
+        services.AddScoped<ISuggestionApplicationService, SuggestionApplicationService>();
 
         var openAiSettings = configuration.GetSection(OpenAiSettings.SectionName).Get<OpenAiSettings>()
             ?? throw new InvalidOperationException($"'{OpenAiSettings.SectionName}' configuration section is missing.");

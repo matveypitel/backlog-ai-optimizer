@@ -1,6 +1,7 @@
 using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Analysis;
+using BacklogOptimizer.Application.Suggestions;
 using BacklogOptimizer.Infrastructure.Persistence;
 
 using Microsoft.AspNetCore.Authorization;
@@ -15,11 +16,16 @@ namespace BacklogOptimizer.Api.Controllers;
 public sealed class ReprioritizationController : ControllerBase
 {
     private readonly IReprioritizationService _service;
+    private readonly ISuggestionApplicationService _applicationService;
     private readonly ApplicationDbContext _dbContext;
 
-    public ReprioritizationController(IReprioritizationService service, ApplicationDbContext dbContext)
+    public ReprioritizationController(
+        IReprioritizationService service,
+        ISuggestionApplicationService applicationService,
+        ApplicationDbContext dbContext)
     {
         _service = service;
+        _applicationService = applicationService;
         _dbContext = dbContext;
     }
 
@@ -37,6 +43,7 @@ public sealed class ReprioritizationController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var items = await _dbContext.ReprioritizationSuggestions
+            .Where(r => r.AppliedAt == null)
             .OrderByDescending(r => r.ConfidenceScore)
             .Select(r => new ReprioritizationSuggestionResponse(
                 r.JiraKey, r.CurrentPriority, r.SuggestedPriority,
@@ -44,6 +51,16 @@ public sealed class ReprioritizationController : ControllerBase
             .ToListAsync(cancellationToken);
 
         return Ok(items);
+    }
+
+    [HttpPost("{jiraKey}/apply")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Apply(string jiraKey, CancellationToken cancellationToken)
+    {
+        var result = await _applicationService.ApplyReprioritizationAsync(jiraKey, cancellationToken);
+        return result.ToActionResult();
     }
 
     [HttpGet("jobs/latest")]

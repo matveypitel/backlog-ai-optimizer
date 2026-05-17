@@ -51,7 +51,7 @@ public sealed class JiraIssuesController : ControllerBase
             .Take(limit)
             .Select(j => new JiraIssueResponse(
                 j.Id, j.JiraKey, j.Summary, j.Description,
-                j.Status, j.Priority, j.IssueType, j.AssigneeEmail,
+                j.Status, j.Priority, j.IssueType, j.AssigneeEmail, j.JiraUrl,
                 j.JiraCreatedAt, j.JiraUpdatedAt, j.LastSyncedAt))
             .ToListAsync(cancellationToken);
 

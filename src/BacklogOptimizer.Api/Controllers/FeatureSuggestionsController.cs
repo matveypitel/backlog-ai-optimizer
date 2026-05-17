@@ -1,6 +1,7 @@
 using BacklogOptimizer.Api.Extensions;
 using BacklogOptimizer.Api.Models;
 using BacklogOptimizer.Application.Analysis;
+using BacklogOptimizer.Application.Suggestions;
 using BacklogOptimizer.Infrastructure.Persistence;
 
 using Microsoft.AspNetCore.Authorization;
@@ -15,11 +16,16 @@ namespace BacklogOptimizer.Api.Controllers;
 public sealed class FeatureSuggestionsController : ControllerBase
 {
     private readonly IFeatureSuggestionService _service;
+    private readonly ISuggestionApplicationService _applicationService;
     private readonly ApplicationDbContext _dbContext;
 
-    public FeatureSuggestionsController(IFeatureSuggestionService service, ApplicationDbContext dbContext)
+    public FeatureSuggestionsController(
+        IFeatureSuggestionService service,
+        ISuggestionApplicationService applicationService,
+        ApplicationDbContext dbContext)
     {
         _service = service;
+        _applicationService = applicationService;
         _dbContext = dbContext;
     }
 
@@ -37,6 +43,7 @@ public sealed class FeatureSuggestionsController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var items = await _dbContext.FeatureSuggestions
+            .Where(f => f.AppliedAt == null)
             .OrderBy(f => f.SuggestedPriority)
             .Select(f => new FeatureSuggestionResponse(
                 f.Id, f.Title, f.Description, f.IssueType,
@@ -54,7 +61,7 @@ public sealed class FeatureSuggestionsController : ControllerBase
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
         var item = await _dbContext.FeatureSuggestions
-            .Where(f => f.Id == id)
+            .Where(f => f.Id == id && f.AppliedAt == null)
             .Select(f => new FeatureSuggestionResponse(
                 f.Id, f.Title, f.Description, f.IssueType,
                 f.SuggestedPriority, f.Tags, f.Reasoning,
@@ -63,6 +70,16 @@ public sealed class FeatureSuggestionsController : ControllerBase
             .FirstOrDefaultAsync(cancellationToken);
 
         return item is null ? NotFound() : Ok(item);
+    }
+
+    [HttpPost("{id:guid}/apply")]
+    [ProducesResponseType(typeof(ApplyFeatureSuggestionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Apply(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _applicationService.ApplyFeatureSuggestionAsync(id, cancellationToken);
+        return result.ToActionResult(value => Ok(new ApplyFeatureSuggestionResponse(value.JiraKey)));
     }
 
     [HttpGet("jobs/latest")]

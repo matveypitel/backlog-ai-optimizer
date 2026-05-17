@@ -11,6 +11,12 @@ public class ReprioritizationSuggestion : BaseEntity
     public string CompetitorEvidence { get; private set; }
     public double ConfidenceScore { get; private set; }
     public DateTime AnalyzedAt { get; private set; }
+    public DateTime? AppliedAt { get; private set; }
+
+    public void MarkApplied()
+    {
+        AppliedAt = DateTime.UtcNow;
+    }
 
     public ReprioritizationSuggestion(
         string jiraKey,

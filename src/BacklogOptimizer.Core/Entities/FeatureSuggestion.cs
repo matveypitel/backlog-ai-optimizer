@@ -16,6 +16,14 @@ public class FeatureSuggestion : BaseEntity
     public string UserStories { get; private set; }
     public string AcceptanceCriteria { get; private set; }
     public DateTime AnalyzedAt { get; private set; }
+    public DateTime? AppliedAt { get; private set; }
+    public string? AppliedJiraKey { get; private set; }
+
+    public void MarkApplied(string jiraKey)
+    {
+        AppliedAt = DateTime.UtcNow;
+        AppliedJiraKey = jiraKey;
+    }
 
     private FeatureSuggestion()
     {

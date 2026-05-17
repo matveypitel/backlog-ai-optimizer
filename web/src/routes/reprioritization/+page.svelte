@@ -12,8 +12,24 @@
   let items = $state<ReprioritizationSuggestion[]>([]);
   let loading = $state(true);
   let analyzing = $state(false);
+  let applying = $state(new Set<string>());
   let job = $state<JobStatusInfo | null>(null);
   let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+  async function applyOne(jiraKey: string) {
+    applying = new Set(applying).add(jiraKey);
+    try {
+      await reprioritizationApi.apply(jiraKey);
+      items = items.filter((x) => x.jiraKey !== jiraKey);
+      toast.success(`Updated ${jiraKey} in Jira.`);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to apply');
+    } finally {
+      const next = new Set(applying);
+      next.delete(jiraKey);
+      applying = next;
+    }
+  }
 
   async function load() {
     try {
@@ -110,6 +126,11 @@
                 <span class="arrow">→</span>
                 <StatusBadge status={r.suggestedPriority} />
                 <span class="confidence mono">conf {r.confidenceScore.toFixed(2)}</span>
+                <Button
+                  onclick={() => applyOne(r.jiraKey)}
+                  loading={applying.has(r.jiraKey)}
+                  disabled={applying.has(r.jiraKey)}
+                >Apply</Button>
               </div>
             </div>
             <p>{r.reasoning}</p>

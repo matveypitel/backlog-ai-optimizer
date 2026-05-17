@@ -116,19 +116,20 @@ internal sealed class JiraSyncService : IJiraSyncService
         var description = f.Description?.GetRawText();
         var created = DateTimeOffset.Parse(f.Created, CultureInfo.InvariantCulture).UtcDateTime;
         var updated = DateTimeOffset.Parse(f.Updated, CultureInfo.InvariantCulture).UtcDateTime;
+        var jiraUrl = $"{_settings.BaseUrl.TrimEnd('/')}/browse/{dto.Key}";
 
         if (existing is not null)
         {
             existing.Update(f.Summary, description, f.Status.Name,
                 f.Priority?.Name, f.Assignee?.EmailAddress,
-                f.IssueType.Name, updated);
+                f.IssueType.Name, jiraUrl, updated);
         }
         else
         {
             await _dbContext.JiraIssues.AddAsync(new JiraIssue(
                 dto.Key, _settings.ProjectKey, f.Summary, description,
                 f.Status.Name, f.Priority?.Name, f.Assignee?.EmailAddress,
-                f.IssueType.Name, created, updated),
+                f.IssueType.Name, jiraUrl, created, updated),
                 cancellationToken);
         }
     }

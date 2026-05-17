@@ -12,6 +12,7 @@ public class JiraIssue : BaseEntity
     public string? Priority { get; private set; }
     public string? AssigneeEmail { get; private set; }
     public string IssueType { get; private set; }
+    public string? JiraUrl { get; private set; }
     public DateTime JiraCreatedAt { get; private set; }
     public DateTime JiraUpdatedAt { get; private set; }
     public DateTime LastSyncedAt { get; private set; }
@@ -20,7 +21,7 @@ public class JiraIssue : BaseEntity
 
     public JiraIssue(string jiraKey, string projectKey, string summary,
         string? description, string status, string? priority,
-        string? assigneeEmail, string issueType,
+        string? assigneeEmail, string issueType, string? jiraUrl,
         DateTime jiraCreatedAt, DateTime jiraUpdatedAt)
     {
         JiraKey = jiraKey;
@@ -31,13 +32,14 @@ public class JiraIssue : BaseEntity
         Priority = priority;
         AssigneeEmail = assigneeEmail;
         IssueType = issueType;
+        JiraUrl = jiraUrl;
         JiraCreatedAt = jiraCreatedAt;
         JiraUpdatedAt = jiraUpdatedAt;
         LastSyncedAt = DateTime.UtcNow;
     }
 
     public void Update(string summary, string? description, string status,
-        string? priority, string? assigneeEmail, string issueType,
+        string? priority, string? assigneeEmail, string issueType, string? jiraUrl,
         DateTime jiraUpdatedAt)
     {
         Summary = summary;
@@ -46,7 +48,13 @@ public class JiraIssue : BaseEntity
         Priority = priority;
         AssigneeEmail = assigneeEmail;
         IssueType = issueType;
+        JiraUrl = jiraUrl;
         JiraUpdatedAt = jiraUpdatedAt;
         LastSyncedAt = DateTime.UtcNow;
+    }
+
+    public void SetPriority(string? priority)
+    {
+        Priority = priority;
     }
 }
