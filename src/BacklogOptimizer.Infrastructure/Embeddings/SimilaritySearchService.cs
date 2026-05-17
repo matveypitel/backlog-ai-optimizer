@@ -43,7 +43,7 @@ internal sealed class SimilaritySearchService : ISimilaritySearchService
                 e.CompetitorFeature.Name,
                 e.CompetitorFeature.Category,
                 e.CompetitorFeature.ScrapedPageId,
-                Url = e.CompetitorFeature.ScrapedPage.Url,
+                e.CompetitorFeature.ScrapedPage.Url,
                 Distance = e.Vector.CosineDistance(issueVector)
             })
             .OrderBy(x => x.Distance)

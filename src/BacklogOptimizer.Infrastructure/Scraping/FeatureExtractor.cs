@@ -1,5 +1,6 @@
 using System.Text.Json;
 
+using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Application.Embeddings;
 using BacklogOptimizer.Application.Prompts;
 using BacklogOptimizer.Core.Entities;
@@ -23,7 +24,7 @@ internal sealed class FeatureExtractor
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly OpenAiChatClient _chatClient;
+    private readonly ILanguageModelClient _chatClient;
     private readonly ApplicationDbContext _dbContext;
     private readonly IPromptService _promptService;
     private readonly IEmbeddingSyncService _embeddingSyncService;
@@ -31,7 +32,7 @@ internal sealed class FeatureExtractor
     private readonly ILogger<FeatureExtractor> _logger;
 
     public FeatureExtractor(
-        OpenAiChatClient chatClient,
+        ILanguageModelClient chatClient,
         ApplicationDbContext dbContext,
         IPromptService promptService,
         IEmbeddingSyncService embeddingSyncService,

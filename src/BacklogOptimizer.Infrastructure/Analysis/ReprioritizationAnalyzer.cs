@@ -23,14 +23,14 @@ internal sealed class ReprioritizationAnalyzer
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly OpenAiChatClient _chatClient;
+    private readonly ILanguageModelClient _chatClient;
     private readonly ApplicationDbContext _dbContext;
     private readonly IPromptService _promptService;
     private readonly OpenAiSettings _settings;
     private readonly ILogger<ReprioritizationAnalyzer> _logger;
 
     public ReprioritizationAnalyzer(
-        OpenAiChatClient chatClient,
+        ILanguageModelClient chatClient,
         ApplicationDbContext dbContext,
         IPromptService promptService,
         IOptions<OpenAiSettings> options,

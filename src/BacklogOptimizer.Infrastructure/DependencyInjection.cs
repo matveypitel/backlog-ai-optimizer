@@ -83,6 +83,9 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         });
 
+        // Register OpenAiChatClient as ILanguageModelClient
+        services.AddScoped<ILanguageModelClient>(provider => provider.GetRequiredService<OpenAiChatClient>());
+
         services.AddScoped<IReprioritizationService, ReprioritizationJobService>();
         services.AddScoped<IFeatureSuggestionService, FeatureSuggestionJobService>();
         services.AddScoped<ReprioritizationAnalyzer>();

@@ -2,11 +2,12 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using BacklogOptimizer.Application.Analysis;
 using BacklogOptimizer.Infrastructure.Analysis.Dto;
 
 namespace BacklogOptimizer.Infrastructure.Analysis;
 
-internal sealed class OpenAiChatClient
+internal sealed class OpenAiChatClient : ILanguageModelClient
 {
     private static readonly JsonSerializerOptions WriteOptions = new()
     {
@@ -28,13 +29,16 @@ internal sealed class OpenAiChatClient
 
     public async Task<string> CompleteAsync(
         string model,
-        string systemPrompt,
-        string userPrompt,
-        CancellationToken cancellationToken)
+        IEnumerable<LanguageModelMessage> messages,
+        CancellationToken cancellationToken = default)
     {
+        var chatMessages = messages
+            .Select(m => new ChatMessage(m.Role, m.Content))
+            .ToList();
+
         var request = new ChatRequest(
             model,
-            [new ChatMessage("system", systemPrompt), new ChatMessage("user", userPrompt)],
+            [.. chatMessages],
             new ChatResponseFormat("json_object"));
 
         var response = await _httpClient.PostAsJsonAsync("/v1/chat/completions", request, WriteOptions, cancellationToken);
