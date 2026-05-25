@@ -12,6 +12,6 @@ export const authApi = {
 
   listUsers: () => api<UserSummary[]>('/api/auth/users'),
 
-  createUser: (email: string, password: string, role: 'User' | 'Admin') =>
+  createUser: (email: string, password: string, role: number) =>
     api('/api/auth/users', { method: 'POST', body: { email, password, role } })
 };

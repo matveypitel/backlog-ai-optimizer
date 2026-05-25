@@ -9,6 +9,11 @@
   import { T } from '$lib/i18n';
   import { formatDate } from '$lib/utils/format';
 
+  const roles = {
+    User: 0,
+    Admin: 1
+  } as const;
+
   let users = $state<UserSummary[]>([]);
   let email = $state('');
   let password = $state('');
@@ -27,7 +32,7 @@
     e.preventDefault();
     creating = true;
     try {
-      await authApi.createUser(email, password, role);
+      await authApi.createUser(email, password, roles[role]);
       toast.success($T.admin.users.userCreated);
       email = '';
       password = '';
