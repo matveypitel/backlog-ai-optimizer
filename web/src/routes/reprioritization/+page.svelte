@@ -209,6 +209,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    flex-wrap: wrap;
   }
   .arrow {
     color: var(--ink-faint);
@@ -217,6 +218,15 @@
     font-size: 0.75rem;
     color: var(--ink-faint);
     margin-left: var(--space-2);
+  }
+  @media (max-width: 600px) {
+    .row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .prio {
+      margin-top: var(--space-2);
+    }
   }
   .evidence {
     font-family: var(--font-mono);

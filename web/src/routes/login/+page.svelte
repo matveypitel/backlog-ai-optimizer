@@ -71,6 +71,12 @@
     margin: 14vh auto 0;
     padding: 0 var(--space-5);
   }
+  @media (max-width: 600px) {
+    .auth-shell {
+      margin-top: var(--space-7);
+      padding: 0 var(--space-4);
+    }
+  }
   .auth-top {
     display: flex;
     justify-content: space-between;

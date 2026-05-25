@@ -108,6 +108,9 @@
     line-height: 1.15;
     margin-bottom: var(--space-2);
   }
+  @media (max-width: 600px) {
+    h1 { font-size: 1.6rem; }
+  }
   .audience {
     color: var(--ink-soft);
     font-style: italic;

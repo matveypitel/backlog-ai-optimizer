@@ -128,6 +128,9 @@
     line-height: 1.15;
     margin-bottom: var(--space-3);
   }
+  @media (max-width: 600px) {
+    h1 { font-size: 1.6rem; }
+  }
   .badges {
     display: flex;
     gap: var(--space-3);

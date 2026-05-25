@@ -99,6 +99,11 @@
     color: var(--ink-soft);
     font-size: 1.1rem;
   }
+  @media (max-width: 600px) {
+    h1 { font-size: 1.8rem; }
+    .lede { font-size: 1rem; }
+    .hero { margin-bottom: var(--space-5); }
+  }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

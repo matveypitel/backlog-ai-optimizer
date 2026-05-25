@@ -179,7 +179,7 @@
   {#if sources.length === 0}
     <EmptyState title={$T.scraping.noSourcesTitle} description={$T.scraping.noSourcesDesc} />
   {:else}
-    <table>
+    <div class="table-scroll"><table>
       <thead>
         <tr>
           <th>{$T.scraping.colName}</th>
@@ -214,7 +214,7 @@
           </tr>
         {/each}
       </tbody>
-    </table>
+    </table></div>
   {/if}
 </section>
 
@@ -234,7 +234,7 @@
   {#if jobs.length === 0}
     <p class="muted">{$T.scraping.noJobsYet}</p>
   {:else}
-    <table>
+    <div class="table-scroll"><table>
       <thead>
         <tr>
           <th>{$T.jira.colStatus}</th>
@@ -255,7 +255,7 @@
           </tr>
         {/each}
       </tbody>
-    </table>
+    </table></div>
   {/if}
 </section>
 
@@ -301,13 +301,19 @@
     display: flex;
     gap: var(--space-3);
     align-items: flex-end;
+    flex-wrap: wrap;
   }
-  .row > :global(.field) { flex: 1; max-width: 380px; }
+  .row > :global(.field) { flex: 1; min-width: 180px; max-width: 380px; }
 
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.9rem;
+    min-width: 540px;
   }
   th, td {
     text-align: left;
@@ -368,5 +374,17 @@
   button.link:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+  @media (max-width: 600px) {
+    .row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .row > :global(.field) { max-width: 100%; }
+    .block-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-2);
+    }
   }
 </style>

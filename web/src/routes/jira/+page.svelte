@@ -63,36 +63,38 @@
 {:else if items.length === 0}
   <EmptyState title={$T.jira.noIssuesTitle} description={$T.jira.noIssuesDesc} />
 {:else}
-  <table>
-    <thead>
-      <tr>
-        <th>{$T.jira.colKey}</th>
-        <th>{$T.jira.colSummary}</th>
-        <th>{$T.jira.colStatus}</th>
-        <th>{$T.jira.colPriority}</th>
-        <th>{$T.jira.colType}</th>
-        <th>{$T.jira.colUpdated}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each items as i}
+  <div class="table-scroll">
+    <table>
+      <thead>
         <tr>
-          <td class="mono key">
-            {#if i.jiraUrl}
-              <a href={i.jiraUrl} target="_blank" rel="noopener">{i.jiraKey}</a>
-            {:else}
-              {i.jiraKey}
-            {/if}
-          </td>
-          <td class="summary">{i.summary}</td>
-          <td><StatusBadge status={i.status} /></td>
-          <td>{#if i.priority}<StatusBadge status={i.priority} />{:else}<span class="dim">—</span>{/if}</td>
-          <td class="muted">{i.issueType}</td>
-          <td class="muted">{formatRelative(i.jiraUpdatedAt)}</td>
+          <th>{$T.jira.colKey}</th>
+          <th>{$T.jira.colSummary}</th>
+          <th>{$T.jira.colStatus}</th>
+          <th>{$T.jira.colPriority}</th>
+          <th>{$T.jira.colType}</th>
+          <th>{$T.jira.colUpdated}</th>
         </tr>
-      {/each}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {#each items as i}
+          <tr>
+            <td class="mono key">
+              {#if i.jiraUrl}
+                <a href={i.jiraUrl} target="_blank" rel="noopener">{i.jiraKey}</a>
+              {:else}
+                {i.jiraKey}
+              {/if}
+            </td>
+            <td class="summary">{i.summary}</td>
+            <td><StatusBadge status={i.status} /></td>
+            <td>{#if i.priority}<StatusBadge status={i.priority} />{:else}<span class="dim">—</span>{/if}</td>
+            <td class="muted">{i.issueType}</td>
+            <td class="muted">{formatRelative(i.jiraUpdatedAt)}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
 {/if}
 
 <style>
@@ -114,10 +116,15 @@
   }
   .filters input { max-width: 320px; }
   .filters select { max-width: 200px; }
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.92rem;
+    min-width: 600px;
   }
   th, td {
     text-align: left;
@@ -139,4 +146,8 @@
   .muted { color: var(--ink-soft); font-size: 0.85rem; }
   .dim { color: var(--ink-faint); }
   tr:hover td { background: var(--bg-elev); }
+  @media (max-width: 600px) {
+    .filters input,
+    .filters select { max-width: 100%; }
+  }
 </style>

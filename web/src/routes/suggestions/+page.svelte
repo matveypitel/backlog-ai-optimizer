@@ -191,15 +191,28 @@
     align-items: flex-start;
     gap: var(--space-4);
     margin-bottom: var(--space-3);
+    flex-wrap: wrap;
   }
   .row h3 {
     margin: 0;
+    flex: 1;
+    min-width: 0;
   }
   .row-right {
     display: flex;
     align-items: center;
     gap: var(--space-3);
     flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  @media (max-width: 600px) {
+    .row {
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .row-right {
+      align-self: flex-start;
+    }
   }
   .value {
     color: var(--ink-soft);
