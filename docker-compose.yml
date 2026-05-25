@@ -1,0 +1,102 @@
+services:
+
+  # ──────────────────────────────────────────────────────────────
+  # PostgreSQL with pgvector extension
+  # Required for both relational data and vector embeddings.
+  # ──────────────────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    # Postgres is internal — not exposed to the host by default.
+    # Uncomment the line below if you need direct DB access (e.g. for migrations from host):
+    # ports: ["5432:5432"]
+
+  # ──────────────────────────────────────────────────────────────
+  # .NET 10 API  (Playwright + EF Core + pgvector)
+  # Runs DB migrations automatically on every startup via entrypoint.
+  # ──────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # ── Database ──────────────────────────────────────────────
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+
+      # ── Jira ──────────────────────────────────────────────────
+      Jira__BaseUrl:          ${JIRA_BASE_URL}
+      Jira__Email:            ${JIRA_EMAIL}
+      Jira__ApiToken:         ${JIRA_API_TOKEN}
+      Jira__ProjectKey:       ${JIRA_PROJECT_KEY}
+      # Jira__JqlFilter is intentionally omitted: leave null in appsettings.json
+      # to use the built-in default query. Set it here only if you need a custom JQL:
+      # Jira__JqlFilter: "project = PROJ AND type in (Story, Bug)"
+      Jira__MaxResultsPerPage: ${JIRA_MAX_RESULTS_PER_PAGE:-50}
+
+      # ── OpenAI ────────────────────────────────────────────────
+      OpenAi__ApiKey:          ${OPENAI_API_KEY}
+      OpenAi__EmbeddingModel:  ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OpenAi__CompletionModel: ${OPENAI_COMPLETION_MODEL:-gpt-4o-mini}
+
+      # ── JWT ───────────────────────────────────────────────────
+      Jwt__SigningKey:        ${JWT_SIGNING_KEY}
+      Jwt__Issuer:            BacklogOptimizer
+      Jwt__Audience:          BacklogOptimizer
+      Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES:-60}
+
+      # ── Admin seed (applied on first run if no users exist) ───
+      AdminSeed__Email:    ${ADMIN_EMAIL}
+      AdminSeed__Password: ${ADMIN_PASSWORD}
+
+      # ── Scraping ──────────────────────────────────────────────
+      Scraping__Headless:         true
+      Scraping__Timeout:          100000
+      Scraping__MaxRetryAttempts: ${SCRAPING_MAX_RETRIES:-3}
+      ScrapingWorker__PollingIntervalSeconds: ${SCRAPING_POLL_SECONDS:-5}
+      AnalysisWorker__PollingIntervalSeconds: ${ANALYSIS_POLL_SECONDS:-5}
+
+      # ── Runtime ───────────────────────────────────────────────
+      ASPNETCORE_URLS:        http://+:8080
+      ASPNETCORE_ENVIRONMENT: Production
+
+    # API is internal — nginx proxies /api/* to this container.
+    # Uncomment to expose API directly (e.g. for debugging or split deployments):
+    # ports: ["8080:8080"]
+
+  # ──────────────────────────────────────────────────────────────
+  # SvelteKit frontend  (nginx static files + API reverse proxy)
+  # All /api/* requests are forwarded to the api service —
+  # no CORS configuration needed, single port for everything.
+  # ──────────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        # Leave empty → same-origin calls through nginx (recommended).
+        # Set to an absolute URL for split/CDN deployments.
+        PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${APP_PORT:-80}:80"
+
+volumes:
+  postgres_data:

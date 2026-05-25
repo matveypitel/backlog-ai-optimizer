@@ -1,0 +1,133 @@
+# ─────────────────────────────────────────────────────────────
+# Stage 1: restore  (cached unless *.csproj / Directory.* change)
+# ─────────────────────────────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS restore
+WORKDIR /src
+
+# Copy only the project / props files first for better layer caching
+COPY Directory.Packages.props ./
+COPY src/BacklogOptimizer.Core/BacklogOptimizer.Core.csproj                         src/BacklogOptimizer.Core/
+COPY src/BacklogOptimizer.Application/BacklogOptimizer.Application.csproj           src/BacklogOptimizer.Application/
+COPY src/BacklogOptimizer.Infrastructure/BacklogOptimizer.Infrastructure.csproj     src/BacklogOptimizer.Infrastructure/
+COPY src/BacklogOptimizer.Api/BacklogOptimizer.Api.csproj                           src/BacklogOptimizer.Api/
+
+RUN dotnet restore src/BacklogOptimizer.Api/BacklogOptimizer.Api.csproj
+
+# ─────────────────────────────────────────────────────────────
+# Stage 2: build & publish
+# ─────────────────────────────────────────────────────────────
+FROM restore AS publish
+WORKDIR /src
+
+COPY . .
+
+RUN dotnet publish src/BacklogOptimizer.Api/BacklogOptimizer.Api.csproj \
+        --no-restore \
+        -c Release \
+        -o /app/publish
+
+# ─────────────────────────────────────────────────────────────
+# Stage 3: EF migration bundle
+# Produces a self-contained binary that applies migrations
+# without requiring the full SDK at runtime.
+# ─────────────────────────────────────────────────────────────
+FROM restore AS migrator
+WORKDIR /src
+
+COPY . .
+
+RUN dotnet tool install --global dotnet-ef --version 10.0.1
+ENV PATH="/root/.dotnet/tools:${PATH}"
+
+RUN dotnet ef migrations bundle \
+        --project  src/BacklogOptimizer.Infrastructure/BacklogOptimizer.Infrastructure.csproj \
+        --startup-project src/BacklogOptimizer.Api/BacklogOptimizer.Api.csproj \
+        --output /app/efbundle \
+        --self-contained \
+        --force
+
+# ─────────────────────────────────────────────────────────────
+# Stage 4: download Playwright browsers (Chromium)
+#
+# Both Microsoft.Playwright.CLI (abandoned at v1.2.3) and the
+# bundled .NET driver (path varies; only materialised by dotnet
+# publish, not dotnet build) are unreliable in Docker.
+#
+# Reliable alternative: install the version-matched Node.js
+# Playwright package.  JS and .NET Playwright use identical browser
+# binaries and both honour PLAYWRIGHT_BROWSERS_PATH, so the .NET
+# runtime finds Chromium at the same location.
+#
+# Node.js is in this builder stage only — nothing from this stage
+# except /playwright-browsers reaches the final image.
+# ─────────────────────────────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS playwright-installer
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        nodejs \
+        npm \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PLAYWRIGHT_BROWSERS_PATH=/playwright-browsers
+
+# Install only Chromium.  Version must match Microsoft.Playwright NuGet
+# package version (1.59.0) so the same browser revision is downloaded.
+RUN npx -y playwright@1.59.0 install chromium
+
+# ─────────────────────────────────────────────────────────────
+# Stage 5: final runtime image
+# ─────────────────────────────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+
+# Chromium system-level dependencies (without the browser binary itself —
+# that lives in /playwright-browsers copied from the installer stage)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        # Chromium shared libraries
+        libnss3 \
+        libnspr4 \
+        libatk1.0-0 \
+        libatk-bridge2.0-0 \
+        libcups2 \
+        libdrm2 \
+        libdbus-1-3 \
+        libxcb1 \
+        libxkbcommon0 \
+        libx11-6 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxext6 \
+        libxfixes3 \
+        libxrandr2 \
+        libgbm1 \
+        libpango-1.0-0 \
+        libcairo2 \
+        libasound2t64 \
+        libatspi2.0-0 \
+        # Fonts (for page rendering)
+        fonts-liberation \
+        fonts-noto-color-emoji \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# App binaries
+COPY --from=publish  /app/publish       .
+
+# EF migration bundle
+COPY --from=migrator /app/efbundle      ./efbundle
+
+# Playwright browser binaries
+COPY --from=playwright-installer /playwright-browsers /playwright-browsers
+ENV PLAYWRIGHT_BROWSERS_PATH=/playwright-browsers
+
+# Docker entrypoint: run migrations → start API
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+# Ensure LF line endings (safe guard against CRLF from Windows editors)
+RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
+
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+EXPOSE 8080
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

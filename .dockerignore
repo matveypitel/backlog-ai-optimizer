@@ -1,0 +1,37 @@
+# ── Secrets (never send to Docker daemon) ────────────────────
+.env
+web/.env
+
+# ── .NET build artifacts ──────────────────────────────────────
+**/bin/
+**/obj/
+**/[Ll]og/
+**/[Ll]ogs/
+
+# ── Node / SvelteKit build artifacts ─────────────────────────
+web/node_modules/
+web/.svelte-kit/
+web/build/
+
+# ── Test projects (not needed for production image) ──────────
+tests/
+
+# ── Version control ───────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Editor & IDE ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+.DS_Store
+Thumbs.db
+
+# ── Docs & tooling ────────────────────────────────────────────
+*.md
+!README.md
+.claude/
+API_CONTROLLERS*.txt
+API_CONTROLLERS*.md
+INTEGRATION_SUMMARY.md

@@ -24,7 +24,9 @@ interface ApiOptions {
 }
 
 function buildUrl(path: string, query?: ApiOptions['query']): string {
-  const url = new URL(path, PUBLIC_API_BASE_URL);
+  // When PUBLIC_API_BASE_URL is empty (Docker / nginx-proxy setup) use same-origin
+  const base = PUBLIC_API_BASE_URL || (browser ? window.location.origin : 'http://localhost');
+  const url = new URL(path, base);
   if (query) {
     for (const [k, v] of Object.entries(query)) {
       if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));

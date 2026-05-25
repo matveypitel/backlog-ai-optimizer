@@ -1,0 +1,7 @@
+# Ensure shell scripts always use LF (required for Linux containers)
+*.sh        text eol=lf
+Dockerfile* text eol=lf
+nginx.conf  text eol=lf
+
+# Default: normalise line endings to LF in the repository
+*           text=auto
