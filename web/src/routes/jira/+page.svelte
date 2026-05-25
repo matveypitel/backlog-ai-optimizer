@@ -5,6 +5,7 @@
   import StatusBadge from '$lib/components/StatusBadge.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
   import { formatRelative } from '$lib/utils/format';
 
   let items = $state<JiraIssue[]>([]);
@@ -19,7 +20,7 @@
     try {
       items = await jiraApi.list({ search, status, priority });
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to load');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failedToLoad);
     } finally {
       loading = false;
     }
@@ -36,41 +37,41 @@
   let priorities = $derived([...new Set(items.map((i) => i.priority).filter(Boolean))] as string[]);
 </script>
 
-<svelte:head><title>Jira · Backlog AI</title></svelte:head>
+<svelte:head><title>{$T.jira.title}</title></svelte:head>
 
 <header class="page-head">
   <div>
-    <span class="eyebrow">Jira issues</span>
-    <h1>The current backlog.</h1>
+    <span class="eyebrow">{$T.jira.eyebrow}</span>
+    <h1>{$T.jira.heading}</h1>
   </div>
 </header>
 
 <div class="filters">
-  <input type="search" placeholder="Search key or summary…" bind:value={search} oninput={debouncedLoad} />
+  <input type="search" placeholder={$T.jira.searchPlaceholder} bind:value={search} oninput={debouncedLoad} />
   <select bind:value={status} onchange={load}>
-    <option value="">All statuses</option>
+    <option value="">{$T.jira.allStatuses}</option>
     {#each statuses as s}<option value={s}>{s}</option>{/each}
   </select>
   <select bind:value={priority} onchange={load}>
-    <option value="">All priorities</option>
+    <option value="">{$T.jira.allPriorities}</option>
     {#each priorities as p}<option value={p}>{p}</option>{/each}
   </select>
 </div>
 
 {#if loading && items.length === 0}
-  <p class="muted">Loading…</p>
+  <p class="muted">{$T.common.loading}</p>
 {:else if items.length === 0}
-  <EmptyState title="No issues" description="Sync from Jira from the admin panel." />
+  <EmptyState title={$T.jira.noIssuesTitle} description={$T.jira.noIssuesDesc} />
 {:else}
   <table>
     <thead>
       <tr>
-        <th>Key</th>
-        <th>Summary</th>
-        <th>Status</th>
-        <th>Priority</th>
-        <th>Type</th>
-        <th>Updated</th>
+        <th>{$T.jira.colKey}</th>
+        <th>{$T.jira.colSummary}</th>
+        <th>{$T.jira.colStatus}</th>
+        <th>{$T.jira.colPriority}</th>
+        <th>{$T.jira.colType}</th>
+        <th>{$T.jira.colUpdated}</th>
       </tr>
     </thead>
     <tbody>

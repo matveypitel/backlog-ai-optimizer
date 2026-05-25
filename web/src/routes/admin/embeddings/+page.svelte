@@ -4,6 +4,7 @@
   import Card from '$lib/components/Card.svelte';
   import Button from '$lib/components/Button.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
 
   let lastJira = $state<EmbeddingSyncResult | null>(null);
   let lastFeatures = $state<EmbeddingSyncResult | null>(null);
@@ -14,9 +15,9 @@
     runningJira = true;
     try {
       lastJira = await embeddingsApi.syncJira();
-      toast.success(`Embedded ${lastJira.embeddedCount} Jira issues.`);
+      toast.success($T.admin.embeddings.embeddedJira.replace('{count}', String(lastJira.embeddedCount)));
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       runningJira = false;
     }
@@ -26,42 +27,42 @@
     runningFeatures = true;
     try {
       lastFeatures = await embeddingsApi.syncFeatures();
-      toast.success(`Embedded ${lastFeatures.embeddedCount} features.`);
+      toast.success($T.admin.embeddings.embeddedFeatures.replace('{count}', String(lastFeatures.embeddedCount)));
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       runningFeatures = false;
     }
   }
 </script>
 
-<svelte:head><title>Embeddings · Admin</title></svelte:head>
+<svelte:head><title>{$T.admin.embeddings.title}</title></svelte:head>
 
 <header class="page-head">
-  <span class="eyebrow">Admin / Embeddings</span>
-  <h1>Vector index maintenance.</h1>
-  <p class="lede">Re-run after new Jira issues or competitor features have been added.</p>
+  <span class="eyebrow">{$T.admin.embeddings.eyebrow}</span>
+  <h1>{$T.admin.embeddings.heading}</h1>
+  <p class="lede">{$T.admin.embeddings.lede}</p>
 </header>
 
 <div class="grid">
-  <Card title="Jira issues">
-    <p>Embed any Jira issues that are new or have changed since last embedded.</p>
-    <Button onclick={syncJira} loading={runningJira}>Sync Jira embeddings</Button>
+  <Card title={$T.admin.embeddings.jiraCard}>
+    <p>{$T.admin.embeddings.jiraDesc}</p>
+    <Button onclick={syncJira} loading={runningJira}>{$T.admin.embeddings.syncJira}</Button>
     {#if lastJira}
       <p class="result">
-        Embedded <strong>{lastJira.embeddedCount}</strong>, skipped {lastJira.skippedCount}.
-        {#if lastJira.errors.length > 0}<span class="err">{lastJira.errors.length} errors.</span>{/if}
+        {$T.admin.embeddings.embedded} <strong>{lastJira.embeddedCount}</strong>, {$T.admin.embeddings.skipped} {lastJira.skippedCount}.
+        {#if lastJira.errors.length > 0}<span class="err">{lastJira.errors.length} {$T.admin.embeddings.errorsCount}</span>{/if}
       </p>
     {/if}
   </Card>
 
-  <Card title="Competitor features">
-    <p>Embed competitor features extracted from scraped pages.</p>
-    <Button onclick={syncFeatures} loading={runningFeatures}>Sync feature embeddings</Button>
+  <Card title={$T.admin.embeddings.featuresCard}>
+    <p>{$T.admin.embeddings.featuresDesc}</p>
+    <Button onclick={syncFeatures} loading={runningFeatures}>{$T.admin.embeddings.syncFeatures}</Button>
     {#if lastFeatures}
       <p class="result">
-        Embedded <strong>{lastFeatures.embeddedCount}</strong>, skipped {lastFeatures.skippedCount}.
-        {#if lastFeatures.errors.length > 0}<span class="err">{lastFeatures.errors.length} errors.</span>{/if}
+        {$T.admin.embeddings.embedded} <strong>{lastFeatures.embeddedCount}</strong>, {$T.admin.embeddings.skipped} {lastFeatures.skippedCount}.
+        {#if lastFeatures.errors.length > 0}<span class="err">{lastFeatures.errors.length} {$T.admin.embeddings.errorsCount}</span>{/if}
       </p>
     {/if}
   </Card>

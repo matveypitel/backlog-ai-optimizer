@@ -3,6 +3,8 @@
   import { page } from '$app/stores';
   import { authApi, ApiError } from '$lib/api';
   import { authStore } from '$lib/stores/auth';
+  import { T } from '$lib/i18n';
+  import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
   import Field from '$lib/components/Field.svelte';
   import Button from '$lib/components/Button.svelte';
 
@@ -27,24 +29,27 @@
       const next = $page.url.searchParams.get('next') || '/';
       await goto(next, { replaceState: true });
     } catch (err) {
-      error = err instanceof ApiError ? err.detail ?? err.message : 'Login failed';
+      error = err instanceof ApiError ? err.detail ?? err.message : $T.auth.loginFailed;
     } finally {
       loading = false;
     }
   }
 </script>
 
-<svelte:head><title>Sign in · Backlog AI</title></svelte:head>
+<svelte:head><title>{$T.auth.signIn} · Backlog AI</title></svelte:head>
 
 <div class="auth-shell">
-  <div class="brand">Backlog<span>·</span>AI</div>
-  <h1>Welcome back.</h1>
-  <p class="lede">Sign in to review competitive intelligence.</p>
+  <div class="auth-top">
+    <div class="brand">Backlog<span>·</span>AI</div>
+    <LanguageSwitcher />
+  </div>
+  <h1>{$T.auth.welcomeBack}</h1>
+  <p class="lede">{$T.auth.signInLede}</p>
 
   <form onsubmit={submit}>
-    <Field label="Email" name="email" type="email" autocomplete="email" required bind:value={email} />
+    <Field label={$T.auth.email} name="email" type="email" autocomplete="email" required bind:value={email} />
     <Field
-      label="Password"
+      label={$T.auth.password}
       name="password"
       type="password"
       autocomplete="current-password"
@@ -52,11 +57,11 @@
       bind:value={password}
     />
     {#if error}<p class="error">{error}</p>{/if}
-    <Button type="submit" {loading}>Sign in</Button>
+    <Button type="submit" {loading}>{$T.auth.signIn}</Button>
   </form>
 
   <p class="alt">
-    No account yet? <a href="/register">Create one</a>.
+    {$T.auth.noAccount} <a href="/register">{$T.auth.createOne}</a>.
   </p>
 </div>
 
@@ -66,11 +71,16 @@
     margin: 14vh auto 0;
     padding: 0 var(--space-5);
   }
+  .auth-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-7);
+  }
   .brand {
     font-family: var(--font-serif);
     font-size: 1.05rem;
     color: var(--ink-soft);
-    margin-bottom: var(--space-7);
     letter-spacing: -0.01em;
   }
   .brand span {

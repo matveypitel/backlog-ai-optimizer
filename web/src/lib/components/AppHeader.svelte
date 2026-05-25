@@ -2,26 +2,28 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { authStore, currentUser, isAdmin } from '$lib/stores/auth';
+  import { T } from '$lib/i18n';
+  import LanguageSwitcher from './LanguageSwitcher.svelte';
 
   function logout() {
     authStore.clear();
     goto('/login');
   }
 
-  const userLinks = [
-    { href: '/', label: 'Dashboard' },
-    { href: '/suggestions', label: 'Suggestions' },
-    { href: '/reprioritization', label: 'Reprioritization' },
-    { href: '/competitors', label: 'Competitors' },
-    { href: '/scraping', label: 'Scraping' },
-    { href: '/jira', label: 'Jira' }
+  $: userLinks = [
+    { href: '/', label: $T.nav.dashboard },
+    { href: '/suggestions', label: $T.nav.suggestions },
+    { href: '/reprioritization', label: $T.nav.reprioritization },
+    { href: '/competitors', label: $T.nav.competitors },
+    { href: '/scraping', label: $T.nav.scraping },
+    { href: '/jira', label: $T.nav.jira }
   ];
 
-  const adminLinks = [
-    { href: '/admin/sync', label: 'Sync' },
-    { href: '/admin/embeddings', label: 'Embeddings' },
-    { href: '/admin/prompts', label: 'Prompts' },
-    { href: '/admin/users', label: 'Users' }
+  $: adminLinks = [
+    { href: '/admin/sync', label: $T.nav.sync },
+    { href: '/admin/embeddings', label: $T.nav.embeddings },
+    { href: '/admin/prompts', label: $T.nav.prompts },
+    { href: '/admin/users', label: $T.nav.users }
   ];
 
   function isActive(href: string): boolean {
@@ -44,17 +46,19 @@
 
   {#if $isAdmin}
     <nav class="nav-admin">
-      <span class="nav-label">Admin</span>
+      <span class="nav-label">{$T.nav.admin}</span>
       {#each adminLinks as link}
         <a href={link.href} class:active={isActive(link.href)}>{link.label}</a>
       {/each}
     </nav>
   {/if}
 
-  <div class="user">
+  <div class="right-cluster">
+    <LanguageSwitcher />
+
     {#if $currentUser}
       <span class="email">{$currentUser.email}</span>
-      <button onclick={logout}>Sign out</button>
+      <button onclick={logout}>{$T.nav.signOut}</button>
     {/if}
   </div>
 </header>
@@ -112,14 +116,14 @@
     color: var(--ink);
     border-bottom-color: var(--accent);
   }
-  .user {
+  .right-cluster {
     display: flex;
     align-items: center;
     gap: var(--space-3);
     margin-left: auto;
     font-size: 0.85rem;
   }
-  :global(.nav-admin) ~ .user {
+  :global(.nav-admin) ~ .right-cluster {
     margin-left: var(--space-4);
   }
   .email {
@@ -127,7 +131,7 @@
     font-family: var(--font-mono);
     font-size: 0.8rem;
   }
-  .user button {
+  .right-cluster button {
     background: transparent;
     border: var(--hairline);
     color: var(--ink-soft);
@@ -136,7 +140,7 @@
     cursor: pointer;
     font-size: 0.8rem;
   }
-  .user button:hover {
+  .right-cluster button:hover {
     background: var(--bg-sunk);
     color: var(--ink);
   }

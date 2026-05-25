@@ -7,6 +7,7 @@
   import StatusBadge from '$lib/components/StatusBadge.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
   import { formatRelative } from '$lib/utils/format';
 
   // Sources
@@ -33,7 +34,7 @@
     try {
       sources = await scrapingApi.sources.list();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to load sources');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.scraping.failedToLoadSources);
     }
   }
 
@@ -41,7 +42,7 @@
     try {
       jobs = await scrapingApi.jobs();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to load jobs');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.scraping.failedToLoadJobs);
     }
   }
 
@@ -51,12 +52,12 @@
     addingSource = true;
     try {
       await scrapingApi.sources.create(newUrl, newName || null);
-      toast.success('Source added.');
+      toast.success($T.scraping.sourceAdded);
       newUrl = '';
       newName = '';
       await loadSources();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.detail ?? err.message : 'Failed';
+      const msg = err instanceof ApiError ? err.detail ?? err.message : $T.common.failed;
       toast.error(msg);
     } finally {
       addingSource = false;
@@ -67,11 +68,11 @@
     syncingAll = true;
     try {
       const r = await scrapingApi.sources.syncAll();
-      if (r.enqueued === 0 && r.skipped === 0) toast.info('Nothing active to sync.');
-      else toast.success(`Queued ${r.enqueued}${r.skipped > 0 ? `, ${r.skipped} already in flight` : ''}.`);
+      if (r.enqueued === 0 && r.skipped === 0) toast.info($T.scraping.nothingToSync);
+      else toast.success(`${$T.scraping.queued} ${r.enqueued}${r.skipped > 0 ? `, ${r.skipped} ${$T.scraping.alreadyInFlight}` : ''}.`);
       await loadJobs();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       syncingAll = false;
     }
@@ -81,10 +82,10 @@
     busyId = s.id;
     try {
       await scrapingApi.sources.syncOne(s.id);
-      toast.success(`Queued ${s.name ?? s.url}.`);
+      toast.success(`${$T.scraping.queued} ${s.name ?? s.url}.`);
       await loadJobs();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       busyId = null;
     }
@@ -100,21 +101,22 @@
       });
       await loadSources();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       busyId = null;
     }
   }
 
   async function removeSource(s: ScrapingSource) {
-    if (!confirm(`Remove ${s.name ?? s.url}? Past scraped pages and features stay.`)) return;
+    const msg = $T.scraping.removeConfirm.replace('{name}', s.name ?? s.url);
+    if (!confirm(msg)) return;
     busyId = s.id;
     try {
       await scrapingApi.sources.remove(s.id);
-      toast.success('Removed.');
+      toast.success($T.scraping.removed);
       await loadSources();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       busyId = null;
     }
@@ -126,11 +128,11 @@
     adhocSubmitting = true;
     try {
       await scrapingApi.enqueue(adhocUrl);
-      toast.success('Queued.');
+      toast.success(`${$T.scraping.queued}.`);
       adhocUrl = '';
       await loadJobs();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       adhocSubmitting = false;
     }
@@ -148,43 +150,42 @@
   let activeCount = $derived(sources.filter((s) => s.isActive).length);
 </script>
 
-<svelte:head><title>Scraping · Backlog AI</title></svelte:head>
+<svelte:head><title>{$T.scraping.title}</title></svelte:head>
 
 <header class="page-head">
-  <span class="eyebrow">Scraping</span>
-  <h1>Tracked sources.</h1>
+  <span class="eyebrow">{$T.scraping.eyebrow}</span>
+  <h1>{$T.scraping.heading}</h1>
   <p class="lede">
-    Maintain a list of competitor pages to scrape regularly. Use <em>Sync all active</em> to enqueue
-    every active source at once, or scrape a one-off URL at the bottom.
+    {$T.scraping.lede} <em>{$T.scraping.ledeEmph}</em> {$T.scraping.ledeRest}
   </p>
 </header>
 
 <section class="block">
   <div class="block-head">
-    <h2>Sources <span class="count">({sources.length})</span></h2>
+    <h2>{$T.scraping.sourcesHeading} <span class="count">({sources.length})</span></h2>
     <Button onclick={syncAll} loading={syncingAll} disabled={activeCount === 0}>
-      Sync all active
+      {$T.scraping.syncAllActive}
     </Button>
   </div>
 
   <form onsubmit={addSource} class="add-form">
     <div class="row">
-      <Field label="URL" name="newUrl" placeholder="https://competitor.com/features" required bind:value={newUrl} />
-      <Field label="Name (optional)" name="newName" placeholder="Defaults to URL" bind:value={newName} />
-      <Button type="submit" loading={addingSource}>Add</Button>
+      <Field label={$T.scraping.urlLabel} name="newUrl" placeholder="https://competitor.com/features" required bind:value={newUrl} />
+      <Field label={$T.scraping.nameLabel} name="newName" placeholder={$T.scraping.namePlaceholder} bind:value={newName} />
+      <Button type="submit" loading={addingSource}>{$T.common.add}</Button>
     </div>
   </form>
 
   {#if sources.length === 0}
-    <EmptyState title="No sources yet" description="Add the first competitor URL above." />
+    <EmptyState title={$T.scraping.noSourcesTitle} description={$T.scraping.noSourcesDesc} />
   {:else}
     <table>
       <thead>
         <tr>
-          <th>Name</th>
-          <th>URL</th>
-          <th>Status</th>
-          <th>Last scraped</th>
+          <th>{$T.scraping.colName}</th>
+          <th>{$T.scraping.urlLabel}</th>
+          <th>{$T.scraping.colStatus}</th>
+          <th>{$T.scraping.colLastScraped}</th>
           <th></th>
         </tr>
       </thead>
@@ -195,19 +196,19 @@
             <td><a href={s.url} target="_blank" rel="noopener noreferrer" class="mono url">{s.url}</a></td>
             <td>
               <span class="state mono" class:on={s.isActive}>
-                {s.isActive ? 'active' : 'paused'}
+                {s.isActive ? $T.scraping.statusActive : $T.scraping.statusPaused}
               </span>
             </td>
             <td class="muted">{formatRelative(s.lastScrapedAt)}</td>
             <td class="row-actions">
               <button class="link" onclick={() => syncOne(s)} disabled={busyId === s.id || !s.isActive}>
-                Sync
+                {$T.scraping.sync}
               </button>
               <button class="link" onclick={() => toggleActive(s)} disabled={busyId === s.id}>
-                {s.isActive ? 'Pause' : 'Resume'}
+                {s.isActive ? $T.scraping.pause : $T.scraping.resume}
               </button>
               <button class="link danger" onclick={() => removeSource(s)} disabled={busyId === s.id}>
-                Remove
+                {$T.common.remove}
               </button>
             </td>
           </tr>
@@ -218,31 +219,29 @@
 </section>
 
 <section class="block">
-  <h2>One-off scrape</h2>
-  <p class="muted small">
-    For a single URL you don't want to track. The job runs once and is not associated with a source.
-  </p>
+  <h2>{$T.scraping.oneOffHeading}</h2>
+  <p class="muted small">{$T.scraping.oneOffLede}</p>
   <form onsubmit={adhocEnqueue} class="adhoc-form">
     <div class="row">
-      <Field label="URL" name="adhocUrl" placeholder="https://example.com/page" required bind:value={adhocUrl} />
-      <Button type="submit" loading={adhocSubmitting}>Queue</Button>
+      <Field label={$T.scraping.urlLabel} name="adhocUrl" placeholder="https://example.com/page" required bind:value={adhocUrl} />
+      <Button type="submit" loading={adhocSubmitting}>{$T.common.queue}</Button>
     </div>
   </form>
 </section>
 
 <section class="block">
-  <h2>Recent jobs</h2>
+  <h2>{$T.scraping.recentJobsHeading}</h2>
   {#if jobs.length === 0}
-    <p class="muted">No jobs yet.</p>
+    <p class="muted">{$T.scraping.noJobsYet}</p>
   {:else}
     <table>
       <thead>
         <tr>
-          <th>Status</th>
-          <th>URL</th>
-          <th>Attempts</th>
-          <th>Created</th>
-          <th>Error</th>
+          <th>{$T.jira.colStatus}</th>
+          <th>{$T.scraping.urlLabel}</th>
+          <th>{$T.scraping.colAttempts}</th>
+          <th>{$T.scraping.colCreated}</th>
+          <th>{$T.scraping.colError}</th>
         </tr>
       </thead>
       <tbody>

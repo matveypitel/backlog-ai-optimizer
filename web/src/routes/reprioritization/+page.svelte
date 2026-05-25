@@ -7,6 +7,7 @@
   import StatusBadge from '$lib/components/StatusBadge.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
   import { formatRelative } from '$lib/utils/format';
 
   let items = $state<ReprioritizationSuggestion[]>([]);
@@ -21,9 +22,9 @@
     try {
       await reprioritizationApi.apply(jiraKey);
       items = items.filter((x) => x.jiraKey !== jiraKey);
-      toast.success(`Updated ${jiraKey} in Jira.`);
+      toast.success(`${$T.reprioritization.updatedInJira} ${jiraKey} ${$T.reprioritization.inJira}`);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to apply');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.reprioritization.failedToApply);
     } finally {
       const next = new Set(applying);
       next.delete(jiraKey);
@@ -35,7 +36,7 @@
     try {
       items = await reprioritizationApi.list();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to load');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failedToLoad);
     } finally {
       loading = false;
     }
@@ -45,11 +46,11 @@
     analyzing = true;
     try {
       await reprioritizationApi.analyze();
-      toast.info('Analysis started.');
+      toast.info($T.common.analysisStarted);
       startPolling();
     } catch (err) {
       analyzing = false;
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     }
   }
 
@@ -61,12 +62,12 @@
         if (job.status === 'Completed') {
           stopPolling();
           analyzing = false;
-          toast.success('Analysis complete.');
+          toast.success($T.common.analysisComplete);
           await load();
         } else if (job.status === 'Failed') {
           stopPolling();
           analyzing = false;
-          toast.error(job.errorMessage ?? 'Analysis failed.');
+          toast.error(job.errorMessage ?? $T.common.analysisFailed);
         }
       } catch {
         // ignore
@@ -89,28 +90,28 @@
   let low = $derived(items.filter((x) => x.confidenceScore < 0.5));
 </script>
 
-<svelte:head><title>Reprioritization · Backlog AI</title></svelte:head>
+<svelte:head><title>{$T.reprioritization.title}</title></svelte:head>
 
 <header class="page-head">
   <div>
-    <span class="eyebrow">Reprioritization</span>
-    <h1>Where the wind is blowing.</h1>
+    <span class="eyebrow">{$T.reprioritization.eyebrow}</span>
+    <h1>{$T.reprioritization.heading}</h1>
   </div>
-  <Button onclick={analyze} loading={analyzing} disabled={analyzing}>Run analysis</Button>
+  <Button onclick={analyze} loading={analyzing} disabled={analyzing}>{$T.common.runAnalysis}</Button>
 </header>
 
 {#if job && analyzing}
   <p class="job-status">
-    <StatusBadge status={job.status} /> Started {formatRelative(job.createdAt)}
+    <StatusBadge status={job.status} /> {$T.common.started} {formatRelative(job.createdAt)}
   </p>
 {/if}
 
 {#if loading}
-  <p class="muted">Loading…</p>
+  <p class="muted">{$T.common.loading}</p>
 {:else if items.length === 0}
   <EmptyState
-    title="No reprioritization suggestions yet"
-    description="Run analysis once Jira issues and competitor features are synced."
+    title={$T.reprioritization.noItemsTitle}
+    description={$T.reprioritization.noItemsDesc}
   />
 {:else}
   {#snippet group(label: string, list: ReprioritizationSuggestion[])}
@@ -125,12 +126,12 @@
                 <StatusBadge status={r.currentPriority} />
                 <span class="arrow">→</span>
                 <StatusBadge status={r.suggestedPriority} />
-                <span class="confidence mono">conf {r.confidenceScore.toFixed(2)}</span>
+                <span class="confidence mono">{$T.common.confidence} {r.confidenceScore.toFixed(2)}</span>
                 <Button
                   onclick={() => applyOne(r.jiraKey)}
                   loading={applying.has(r.jiraKey)}
                   disabled={applying.has(r.jiraKey)}
-                >Apply</Button>
+                >{$T.common.apply}</Button>
               </div>
             </div>
             <p>{r.reasoning}</p>
@@ -143,9 +144,9 @@
     {/if}
   {/snippet}
 
-  {@render group('High confidence', high)}
-  {@render group('Medium confidence', medium)}
-  {@render group('Low confidence', low)}
+  {@render group($T.reprioritization.highConfidence, high)}
+  {@render group($T.reprioritization.mediumConfidence, medium)}
+  {@render group($T.reprioritization.lowConfidence, low)}
 {/if}
 
 <style>

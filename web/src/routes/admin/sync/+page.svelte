@@ -5,6 +5,7 @@
   import Card from '$lib/components/Card.svelte';
   import Button from '$lib/components/Button.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
   import { formatRelative } from '$lib/utils/format';
 
   let status = $state<SyncStatus | null>(null);
@@ -23,10 +24,10 @@
     running = true;
     try {
       lastRun = await syncApi.run();
-      toast.success(`Synced ${lastRun.syncedCount} issues.`);
+      toast.success(`${$T.admin.sync.syncedCount} ${lastRun.syncedCount} ${$T.admin.sync.issues}`);
       await loadStatus();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Sync failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.admin.sync.syncFailed);
     } finally {
       running = false;
     }
@@ -35,35 +36,35 @@
   onMount(loadStatus);
 </script>
 
-<svelte:head><title>Jira sync · Admin</title></svelte:head>
+<svelte:head><title>{$T.admin.sync.title}</title></svelte:head>
 
 <header class="page-head">
-  <span class="eyebrow">Admin / Jira sync</span>
-  <h1>Pull the latest backlog.</h1>
+  <span class="eyebrow">{$T.admin.sync.eyebrow}</span>
+  <h1>{$T.admin.sync.heading}</h1>
 </header>
 
 <div class="grid">
-  <Card eyebrow="Currently synced" title={status ? String(status.totalIssues) : '—'}>
-    <p>Last sync {formatRelative(status?.lastSyncedAt)}</p>
+  <Card eyebrow={$T.admin.sync.currentlySynced} title={status ? String(status.totalIssues) : '—'}>
+    <p>{$T.admin.sync.lastSync} {formatRelative(status?.lastSyncedAt)}</p>
   </Card>
 
-  <Card title="Run sync">
-    <p>Pulls all configured-project issues from Jira and upserts into the local database.</p>
-    <Button onclick={run} loading={running}>Sync now</Button>
+  <Card title={$T.admin.sync.runSync}>
+    <p>{$T.admin.sync.runSyncDesc}</p>
+    <Button onclick={run} loading={running}>{$T.admin.sync.syncNow}</Button>
   </Card>
 </div>
 
 {#if lastRun}
   <section class="result">
-    <h2>Last run</h2>
-    <p>Synced <strong>{lastRun.syncedCount}</strong> issues.</p>
+    <h2>{$T.admin.sync.lastRun}</h2>
+    <p>{$T.admin.sync.syncedCount} <strong>{lastRun.syncedCount}</strong> {$T.admin.sync.issues}</p>
     {#if lastRun.errors.length > 0}
-      <h3>Errors</h3>
+      <h3>{$T.common.errors}</h3>
       <ul>
         {#each lastRun.errors as e}<li class="error">{e}</li>{/each}
       </ul>
     {:else}
-      <p class="muted">No errors.</p>
+      <p class="muted">{$T.common.noErrors}</p>
     {/if}
   </section>
 {/if}

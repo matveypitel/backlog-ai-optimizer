@@ -6,6 +6,7 @@
   import Field from '$lib/components/Field.svelte';
   import Button from '$lib/components/Button.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
   import { formatDate } from '$lib/utils/format';
 
   let users = $state<UserSummary[]>([]);
@@ -18,7 +19,7 @@
     try {
       users = await authApi.listUsers();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     }
   }
 
@@ -27,13 +28,13 @@
     creating = true;
     try {
       await authApi.createUser(email, password, role);
-      toast.success('User created.');
+      toast.success($T.admin.users.userCreated);
       email = '';
       password = '';
       role = 'User';
       await load();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       creating = false;
     }
@@ -42,39 +43,39 @@
   onMount(load);
 </script>
 
-<svelte:head><title>Users · Admin</title></svelte:head>
+<svelte:head><title>{$T.admin.users.title}</title></svelte:head>
 
 <header class="page-head">
-  <span class="eyebrow">Admin / Users</span>
-  <h1>Members.</h1>
+  <span class="eyebrow">{$T.admin.users.eyebrow}</span>
+  <h1>{$T.admin.users.heading}</h1>
 </header>
 
 <div class="grid">
-  <Card title="Create user">
+  <Card title={$T.admin.users.createUser}>
     <form onsubmit={create}>
-      <Field label="Email" name="email" type="email" required bind:value={email} />
-      <Field label="Password" name="password" type="password" required hint="Min 8 chars." bind:value={password} />
+      <Field label={$T.auth.email} name="email" type="email" required bind:value={email} />
+      <Field label={$T.auth.password} name="password" type="password" required hint={$T.admin.users.passwordHint} bind:value={password} />
       <div class="role">
-        <label>Role</label>
+        <span class="role-label">{$T.admin.users.roleLabel}</span>
         <div class="radios">
-          <label><input type="radio" name="role" value="User" bind:group={role} /> User</label>
-          <label><input type="radio" name="role" value="Admin" bind:group={role} /> Admin</label>
+          <label><input type="radio" name="role" value="User" bind:group={role} /> {$T.admin.users.roleUser}</label>
+          <label><input type="radio" name="role" value="Admin" bind:group={role} /> {$T.admin.users.roleAdmin}</label>
         </div>
       </div>
-      <Button type="submit" loading={creating}>Create</Button>
+      <Button type="submit" loading={creating}>{$T.common.create}</Button>
     </form>
   </Card>
 
-  <Card title="Existing users" eyebrow={String(users.length)}>
+  <Card title={$T.admin.users.existingUsers} eyebrow={String(users.length)}>
     {#if users.length === 0}
-      <p class="muted">None yet.</p>
+      <p class="muted">{$T.admin.users.noneYet}</p>
     {:else}
       <table>
         <thead>
           <tr>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Created</th>
+            <th>{$T.admin.users.colEmail}</th>
+            <th>{$T.admin.users.colRole}</th>
+            <th>{$T.admin.users.colCreated}</th>
           </tr>
         </thead>
         <tbody>
@@ -111,6 +112,13 @@
     .grid { grid-template-columns: 1fr; }
   }
   .role { margin-bottom: var(--space-4); }
+  .role-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-bottom: var(--space-2);
+  }
   .radios {
     display: flex;
     gap: var(--space-4);

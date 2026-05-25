@@ -10,6 +10,7 @@
   import Card from '$lib/components/Card.svelte';
   import { formatRelative } from '$lib/utils/format';
   import { currentUser } from '$lib/stores/auth';
+  import { T } from '$lib/i18n';
 
   let suggestionsCount = $state<number | null>(null);
   let highConfidenceReprio = $state<number | null>(null);
@@ -32,46 +33,46 @@
       lastSync = sync.lastSyncedAt;
       totalIssues = sync.totalIssues;
     } catch (err) {
-      error = err instanceof ApiError ? err.detail ?? err.message : 'Failed to load';
+      error = err instanceof ApiError ? err.detail ?? err.message : $T.dashboard.failedToLoad;
     }
   });
 </script>
 
-<svelte:head><title>Dashboard · Backlog AI</title></svelte:head>
+<svelte:head><title>{$T.dashboard.title}</title></svelte:head>
 
 <header class="hero">
-  <span class="eyebrow">Overview</span>
-  <h1>Good day{$currentUser?.email ? `, ${$currentUser.email.split('@')[0]}` : ''}.</h1>
-  <p class="lede">A short read of where the backlog stands today.</p>
+  <span class="eyebrow">{$T.dashboard.eyebrow}</span>
+  <h1>{$T.dashboard.greeting}{$currentUser?.email ? `, ${$currentUser.email.split('@')[0]}` : ''}.</h1>
+  <p class="lede">{$T.dashboard.lede}</p>
 </header>
 
 {#if error}<p class="error">{error}</p>{/if}
 
 <section class="grid">
   <a class="tile" href="/suggestions">
-    <Card eyebrow="Feature suggestions" title={suggestionsCount === null ? '—' : String(suggestionsCount)}>
-      <p>New backlog items proposed from competitive gaps.</p>
+    <Card eyebrow={$T.dashboard.suggestions} title={suggestionsCount === null ? '—' : String(suggestionsCount)}>
+      <p>{$T.dashboard.suggestionsSub}</p>
     </Card>
   </a>
 
   <a class="tile" href="/reprioritization">
     <Card
-      eyebrow="High-confidence reprio"
+      eyebrow={$T.dashboard.reprio}
       title={highConfidenceReprio === null ? '—' : String(highConfidenceReprio)}
     >
-      <p>Items with confidence ≥ 0.7 worth re-evaluating.</p>
+      <p>{$T.dashboard.reprioSub}</p>
     </Card>
   </a>
 
   <a class="tile" href="/competitors">
-    <Card eyebrow="Competitor features" title={featuresCount === null ? '—' : String(featuresCount)}>
-      <p>Capabilities extracted from scraped competitor pages.</p>
+    <Card eyebrow={$T.dashboard.competitors} title={featuresCount === null ? '—' : String(featuresCount)}>
+      <p>{$T.dashboard.competitorsSub}</p>
     </Card>
   </a>
 
   <a class="tile" href="/jira">
-    <Card eyebrow="Jira issues" title={totalIssues === null ? '—' : String(totalIssues)}>
-      <p>Last sync {formatRelative(lastSync)}.</p>
+    <Card eyebrow={$T.dashboard.jiraIssues} title={totalIssues === null ? '—' : String(totalIssues)}>
+      <p>{$T.dashboard.lastSync} {formatRelative(lastSync)}.</p>
     </Card>
   </a>
 </section>

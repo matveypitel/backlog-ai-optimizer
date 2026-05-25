@@ -2,6 +2,8 @@
   import { goto } from '$app/navigation';
   import { authApi, ApiError } from '$lib/api';
   import { authStore } from '$lib/stores/auth';
+  import { T } from '$lib/i18n';
+  import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
   import Field from '$lib/components/Field.svelte';
   import Button from '$lib/components/Button.svelte';
 
@@ -15,11 +17,11 @@
     e.preventDefault();
     error = null;
     if (password.length < 8) {
-      error = 'Password must be at least 8 characters.';
+      error = $T.auth.passwordMinLength;
       return;
     }
     if (password !== confirm) {
-      error = 'Passwords do not match.';
+      error = $T.auth.passwordMismatch;
       return;
     }
     loading = true;
@@ -34,33 +36,36 @@
       authStore.setUser(me);
       await goto('/', { replaceState: true });
     } catch (err) {
-      error = err instanceof ApiError ? err.detail ?? err.message : 'Registration failed';
+      error = err instanceof ApiError ? err.detail ?? err.message : $T.auth.registrationFailed;
     } finally {
       loading = false;
     }
   }
 </script>
 
-<svelte:head><title>Create account · Backlog AI</title></svelte:head>
+<svelte:head><title>{$T.auth.createAccountBtn} · Backlog AI</title></svelte:head>
 
 <div class="auth-shell">
-  <div class="brand">Backlog<span>·</span>AI</div>
-  <h1>Create an account.</h1>
-  <p class="lede">Read suggestions, browse competitive features, search the backlog.</p>
+  <div class="auth-top">
+    <div class="brand">Backlog<span>·</span>AI</div>
+    <LanguageSwitcher />
+  </div>
+  <h1>{$T.auth.createAccount}</h1>
+  <p class="lede">{$T.auth.registerLede}</p>
 
   <form onsubmit={submit}>
-    <Field label="Email" name="email" type="email" autocomplete="email" required bind:value={email} />
+    <Field label={$T.auth.email} name="email" type="email" autocomplete="email" required bind:value={email} />
     <Field
-      label="Password"
+      label={$T.auth.password}
       name="password"
       type="password"
       autocomplete="new-password"
       required
-      hint="At least 8 characters."
+      hint={$T.auth.passwordHint}
       bind:value={password}
     />
     <Field
-      label="Confirm password"
+      label={$T.auth.confirmPassword}
       name="confirm"
       type="password"
       autocomplete="new-password"
@@ -68,11 +73,11 @@
       bind:value={confirm}
     />
     {#if error}<p class="error">{error}</p>{/if}
-    <Button type="submit" {loading}>Create account</Button>
+    <Button type="submit" {loading}>{$T.auth.createAccountBtn}</Button>
   </form>
 
   <p class="alt">
-    Already have one? <a href="/login">Sign in</a>.
+    {$T.auth.alreadyHaveOne} <a href="/login">{$T.auth.signIn}</a>.
   </p>
 </div>
 
@@ -82,11 +87,16 @@
     margin: 12vh auto 0;
     padding: 0 var(--space-5);
   }
+  .auth-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-7);
+  }
   .brand {
     font-family: var(--font-serif);
     font-size: 1.05rem;
     color: var(--ink-soft);
-    margin-bottom: var(--space-7);
     letter-spacing: -0.01em;
   }
   .brand span {

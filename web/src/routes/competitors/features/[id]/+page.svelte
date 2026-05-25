@@ -4,6 +4,7 @@
   import { competitorsApi, ApiError } from '$lib/api';
   import type { CompetitorFeature } from '$lib/types';
   import Tag from '$lib/components/Tag.svelte';
+  import { T } from '$lib/i18n';
   import { formatDate, parseJsonArray } from '$lib/utils/format';
 
   let item = $state<CompetitorFeature | null>(null);
@@ -13,7 +14,7 @@
     try {
       item = await competitorsApi.get($page.params.id);
     } catch (err) {
-      error = err instanceof ApiError ? err.detail ?? err.message : 'Failed to load';
+      error = err instanceof ApiError ? err.detail ?? err.message : $T.common.failedToLoad;
     }
   });
 
@@ -21,23 +22,23 @@
   let useCases = $derived(item ? parseJsonArray(item.useCases) : []);
 </script>
 
-<svelte:head><title>{item?.name ?? 'Feature'} · Backlog AI</title></svelte:head>
+<svelte:head><title>{item?.name ?? $T.competitors_detail.competitorFeature} · Backlog AI</title></svelte:head>
 
-<a class="back" href="/competitors">← Competitors</a>
+<a class="back" href="/competitors">{$T.competitors_detail.backLink}</a>
 
 {#if error}
   <p class="error">{error}</p>
 {:else if !item}
-  <p class="muted">Loading…</p>
+  <p class="muted">{$T.common.loading}</p>
 {:else}
   <article class="detail">
     <header>
       <span class="eyebrow">
-        {item.category ?? 'Competitor feature'} · extracted {formatDate(item.extractedAt)}
+        {item.category ?? $T.competitors_detail.competitorFeature} · {$T.competitors_detail.extracted} {formatDate(item.extractedAt)}
       </span>
       <h1>{item.name}</h1>
       {#if item.targetAudience}
-        <p class="audience">For {item.targetAudience}</p>
+        <p class="audience">{$T.competitors_detail.for} {item.targetAudience}</p>
       {/if}
     </header>
 
@@ -45,7 +46,7 @@
 
     {#if benefits.length > 0}
       <section>
-        <h2>Key benefits</h2>
+        <h2>{$T.competitors_detail.keyBenefits}</h2>
         <ul class="bullet">
           {#each benefits as b}<li>{b}</li>{/each}
         </ul>
@@ -54,7 +55,7 @@
 
     {#if useCases.length > 0}
       <section>
-        <h2>Use cases</h2>
+        <h2>{$T.competitors_detail.useCases}</h2>
         <ul class="bullet">
           {#each useCases as u}<li>{u}</li>{/each}
         </ul>
@@ -63,13 +64,13 @@
 
     {#if item.differentiators}
       <section>
-        <h2>Differentiators</h2>
+        <h2>{$T.competitors_detail.differentiators}</h2>
         <p>{item.differentiators}</p>
       </section>
     {/if}
 
     <section>
-      <h2>Source</h2>
+      <h2>{$T.competitors_detail.source}</h2>
       <p>
         <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" class="mono">{item.sourceUrl}</a>
         {#if item.sourceTitle}<br /><span class="muted">{item.sourceTitle}</span>{/if}

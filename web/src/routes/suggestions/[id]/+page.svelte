@@ -5,6 +5,7 @@
   import type { FeatureSuggestion } from '$lib/types';
   import StatusBadge from '$lib/components/StatusBadge.svelte';
   import Tag from '$lib/components/Tag.svelte';
+  import { T } from '$lib/i18n';
   import { formatDate, parseJsonArray } from '$lib/utils/format';
 
   let item = $state<FeatureSuggestion | null>(null);
@@ -14,7 +15,7 @@
     try {
       item = await suggestionsApi.get($page.params.id);
     } catch (err) {
-      error = err instanceof ApiError ? err.detail ?? err.message : 'Failed to load';
+      error = err instanceof ApiError ? err.detail ?? err.message : $T.common.failedToLoad;
     }
   });
 
@@ -23,14 +24,14 @@
   let tags = $derived(item ? parseJsonArray(item.tags) : []);
 </script>
 
-<svelte:head><title>{item?.title ?? 'Suggestion'} · Backlog AI</title></svelte:head>
+<svelte:head><title>{item?.title ?? $T.suggestions.eyebrow} · Backlog AI</title></svelte:head>
 
-<a class="back" href="/suggestions">← Suggestions</a>
+<a class="back" href="/suggestions">{$T.suggestions_detail.backLink}</a>
 
 {#if error}
   <p class="error">{error}</p>
 {:else if !item}
-  <p class="muted">Loading…</p>
+  <p class="muted">{$T.common.loading}</p>
 {:else}
   <article class="detail">
     <header>
@@ -39,7 +40,7 @@
       <div class="badges">
         <StatusBadge status={item.suggestedPriority} />
         {#if item.estimatedImpact}
-          <span class="impact">Impact: {item.estimatedImpact}</span>
+          <span class="impact">{$T.suggestions_detail.impact}: {item.estimatedImpact}</span>
         {/if}
       </div>
     </header>
@@ -48,14 +49,14 @@
 
     {#if item.businessValue}
       <section>
-        <h2>Business value</h2>
+        <h2>{$T.suggestions_detail.businessValue}</h2>
         <p>{item.businessValue}</p>
       </section>
     {/if}
 
     {#if stories.length > 0}
       <section>
-        <h2>User stories</h2>
+        <h2>{$T.suggestions_detail.userStories}</h2>
         <ul class="stories">
           {#each stories as s}<li>{s}</li>{/each}
         </ul>
@@ -64,7 +65,7 @@
 
     {#if criteria.length > 0}
       <section>
-        <h2>Acceptance criteria</h2>
+        <h2>{$T.suggestions_detail.acceptanceCriteria}</h2>
         <ul class="ac">
           {#each criteria as c}<li>{c}</li>{/each}
         </ul>
@@ -73,14 +74,14 @@
 
     {#if item.reasoning}
       <section>
-        <h2>Reasoning</h2>
+        <h2>{$T.suggestions_detail.reasoning}</h2>
         <p>{item.reasoning}</p>
       </section>
     {/if}
 
     {#if item.competitorEvidence}
       <section>
-        <h2>Competitor evidence</h2>
+        <h2>{$T.suggestions_detail.competitorEvidence}</h2>
         <p class="evidence">{item.competitorEvidence}</p>
       </section>
     {/if}

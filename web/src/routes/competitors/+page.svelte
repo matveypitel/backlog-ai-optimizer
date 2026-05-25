@@ -6,6 +6,7 @@
   import Tag from '$lib/components/Tag.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
   import { formatRelative, truncate } from '$lib/utils/format';
 
   let items = $state<CompetitorFeature[]>([]);
@@ -18,7 +19,7 @@
     try {
       items = await competitorsApi.list(search || undefined);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to load');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failedToLoad);
     } finally {
       loading = false;
     }
@@ -47,16 +48,16 @@
   });
 </script>
 
-<svelte:head><title>Competitors · Backlog AI</title></svelte:head>
+<svelte:head><title>{$T.competitors.title}</title></svelte:head>
 
 <header class="page-head">
   <div>
-    <span class="eyebrow">Competitors</span>
-    <h1>What everyone else is shipping.</h1>
+    <span class="eyebrow">{$T.competitors.eyebrow}</span>
+    <h1>{$T.competitors.heading}</h1>
   </div>
   <input
     type="search"
-    placeholder="Search features…"
+    placeholder={$T.competitors.searchPlaceholder}
     bind:value={search}
     oninput={onSearch}
     class="search"
@@ -64,9 +65,9 @@
 </header>
 
 {#if loading}
-  <p class="muted">Loading…</p>
+  <p class="muted">{$T.common.loading}</p>
 {:else if items.length === 0}
-  <EmptyState title="No competitor features yet" description="Scrape a competitor page from the admin panel." />
+  <EmptyState title={$T.competitors.noFeaturesTitle} description={$T.competitors.noFeaturesDesc} />
 {:else}
   <div class="groups">
     {#each grouped as g}
@@ -84,7 +85,7 @@
                   {#if f.category}<Tag>{f.category}</Tag>{/if}
                 </div>
                 <p>{truncate(f.description, 180)}</p>
-                <span class="when">extracted {formatRelative(f.extractedAt)}</span>
+                <span class="when">{$T.competitors.extracted} {formatRelative(f.extractedAt)}</span>
               </Card>
             </a>
           {/each}

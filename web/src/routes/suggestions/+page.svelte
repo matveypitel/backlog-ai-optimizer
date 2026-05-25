@@ -8,6 +8,7 @@
   import Tag from '$lib/components/Tag.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
   import { formatRelative, parseJsonArray, truncate } from '$lib/utils/format';
 
   let items = $state<FeatureSuggestion[]>([]);
@@ -24,9 +25,9 @@
     try {
       const result = await suggestionsApi.apply(id);
       items = items.filter((x) => x.id !== id);
-      toast.success(`Created ${result.jiraKey} in Jira.`);
+      toast.success(`${$T.suggestions.createdIn} ${result.jiraKey} ${$T.suggestions.inJira}`);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to create');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.suggestions.failedToCreate);
     } finally {
       const next = new Set(applying);
       next.delete(id);
@@ -38,7 +39,7 @@
     try {
       items = await suggestionsApi.list();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed to load');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failedToLoad);
     } finally {
       loading = false;
     }
@@ -48,11 +49,11 @@
     analyzing = true;
     try {
       await suggestionsApi.analyze();
-      toast.info('Analysis started.');
+      toast.info($T.common.analysisStarted);
       startPolling();
     } catch (err) {
       analyzing = false;
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     }
   }
 
@@ -64,12 +65,12 @@
         if (job.status === 'Completed') {
           stopPolling();
           analyzing = false;
-          toast.success('Analysis complete.');
+          toast.success($T.common.analysisComplete);
           await load();
         } else if (job.status === 'Failed') {
           stopPolling();
           analyzing = false;
-          toast.error(job.errorMessage ?? 'Analysis failed.');
+          toast.error(job.errorMessage ?? $T.common.analysisFailed);
         }
       } catch {
         // ignore poll errors
@@ -88,28 +89,28 @@
   onDestroy(stopPolling);
 </script>
 
-<svelte:head><title>Suggestions · Backlog AI</title></svelte:head>
+<svelte:head><title>{$T.suggestions.title}</title></svelte:head>
 
 <header class="page-head">
   <div>
-    <span class="eyebrow">Feature suggestions</span>
-    <h1>Closing the gap.</h1>
+    <span class="eyebrow">{$T.suggestions.eyebrow}</span>
+    <h1>{$T.suggestions.heading}</h1>
   </div>
-  <Button onclick={analyze} loading={analyzing} disabled={analyzing}>Run analysis</Button>
+  <Button onclick={analyze} loading={analyzing} disabled={analyzing}>{$T.common.runAnalysis}</Button>
 </header>
 
 {#if job && analyzing}
   <p class="job-status">
-    <StatusBadge status={job.status} /> Started {formatRelative(job.createdAt)}
+    <StatusBadge status={job.status} /> {$T.common.started} {formatRelative(job.createdAt)}
   </p>
 {/if}
 
 {#if loading}
-  <p class="muted">Loading…</p>
+  <p class="muted">{$T.common.loading}</p>
 {:else if items.length === 0}
   <EmptyState
-    title="No suggestions yet"
-    description="Once competitor features are scraped and analyzed, gaps will appear here."
+    title={$T.suggestions.noSuggestionsTitle}
+    description={$T.suggestions.noSuggestionsDesc}
   />
 {:else}
   <div class="list">
@@ -124,7 +125,7 @@
                 onclick={(e: MouseEvent) => applyOne(e, item.id)}
                 loading={applying.has(item.id)}
                 disabled={applying.has(item.id)}
-              >Create in Jira</Button>
+              >{$T.suggestions.createInJira}</Button>
             </div>
           </div>
           {#if item.businessValue}

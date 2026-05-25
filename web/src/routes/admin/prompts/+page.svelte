@@ -3,49 +3,46 @@
   import { promptsApi, ApiError } from '$lib/api';
   import type { PromptTemplate } from '$lib/types';
   import Card from '$lib/components/Card.svelte';
-  import Button from '$lib/components/Button.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
   import { formatRelative, truncate } from '$lib/utils/format';
 
   let prompts = $state<PromptTemplate[]>([]);
   let loading = $state(true);
 
-  const labels: Record<string, string> = {
-    FeatureExtraction: 'Feature extraction',
-    FeatureSuggestion: 'Feature suggestion',
-    Reprioritization: 'Reprioritization'
-  };
+  let labels = $derived<Record<string, string>>({
+    FeatureExtraction: $T.admin.prompts.featureExtraction,
+    FeatureSuggestion: $T.admin.prompts.featureSuggestion,
+    Reprioritization: $T.admin.prompts.reprioritization
+  });
 
-  const subtitles: Record<string, string> = {
-    FeatureExtraction: 'Used when distilling competitor pages into features.',
-    FeatureSuggestion: 'Turns competitive gaps into backlog items.',
-    Reprioritization: 'Decides whether priorities should change.'
-  };
+  let subtitles = $derived<Record<string, string>>({
+    FeatureExtraction: $T.admin.prompts.featureExtractionSub,
+    FeatureSuggestion: $T.admin.prompts.featureSuggestionSub,
+    Reprioritization: $T.admin.prompts.reprioritizationSub
+  });
 
   onMount(async () => {
     try {
       prompts = await promptsApi.list();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       loading = false;
     }
   });
 </script>
 
-<svelte:head><title>Prompts · Admin</title></svelte:head>
+<svelte:head><title>{$T.admin.prompts.title}</title></svelte:head>
 
 <header class="page-head">
-  <span class="eyebrow">Admin / Prompts</span>
-  <h1>The voice of the analysis.</h1>
-  <p class="lede">
-    Edit the instructions that shape how the LLM reasons. The response schema is fixed in code and
-    appended automatically — it is not editable, so the structure of the output is always preserved.
-  </p>
+  <span class="eyebrow">{$T.admin.prompts.eyebrow}</span>
+  <h1>{$T.admin.prompts.heading}</h1>
+  <p class="lede">{$T.admin.prompts.lede}</p>
 </header>
 
 {#if loading}
-  <p class="muted">Loading…</p>
+  <p class="muted">{$T.common.loading}</p>
 {:else}
   <div class="grid">
     {#each prompts as p}
@@ -53,7 +50,7 @@
         <Card eyebrow={labels[p.type] ?? p.type} title={subtitles[p.type] ?? ''}>
           <p class="preview">{truncate(p.instructions, 240)}</p>
           <span class="when">
-            {p.updatedAt ? `Updated ${formatRelative(p.updatedAt)}` : 'Default'}
+            {p.updatedAt ? `${$T.common.updated} ${formatRelative(p.updatedAt)}` : $T.common.default}
           </span>
         </Card>
       </a>

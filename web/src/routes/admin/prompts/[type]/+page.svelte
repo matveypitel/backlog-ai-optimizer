@@ -5,6 +5,7 @@
   import type { PromptTemplate } from '$lib/types';
   import Button from '$lib/components/Button.svelte';
   import { toast } from '$lib/stores/toast';
+  import { T } from '$lib/i18n';
   import { formatRelative } from '$lib/utils/format';
 
   let prompt = $state<PromptTemplate | null>(null);
@@ -12,18 +13,18 @@
   let saving = $state(false);
   let resetting = $state(false);
 
-  const labels: Record<string, string> = {
-    FeatureExtraction: 'Feature extraction',
-    FeatureSuggestion: 'Feature suggestion',
-    Reprioritization: 'Reprioritization'
-  };
+  let labels = $derived<Record<string, string>>({
+    FeatureExtraction: $T.admin.prompts.featureExtraction,
+    FeatureSuggestion: $T.admin.prompts.featureSuggestion,
+    Reprioritization: $T.admin.prompts.reprioritization
+  });
 
   async function load() {
     try {
       prompt = await promptsApi.get($page.params.type);
       instructions = prompt.instructions;
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     }
   }
 
@@ -31,24 +32,24 @@
     saving = true;
     try {
       await promptsApi.update($page.params.type, instructions);
-      toast.success('Saved.');
+      toast.success($T.admin.prompts.saved);
       await load();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       saving = false;
     }
   }
 
   async function reset() {
-    if (!confirm('Reset instructions to the default? Your edits will be lost.')) return;
+    if (!confirm($T.admin.prompts.resetConfirm)) return;
     resetting = true;
     try {
       await promptsApi.reset($page.params.type);
-      toast.success('Reset to default.');
+      toast.success($T.admin.prompts.resetDone);
       await load();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.detail ?? err.message : 'Failed');
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       resetting = false;
     }
@@ -59,50 +60,44 @@
   onMount(load);
 </script>
 
-<svelte:head><title>{prompt ? labels[prompt.type] ?? prompt.type : 'Prompt'} · Admin</title></svelte:head>
+<svelte:head><title>{prompt ? labels[prompt.type] ?? prompt.type : $T.admin.prompts.heading} · Admin</title></svelte:head>
 
-<a class="back" href="/admin/prompts">← Prompts</a>
+<a class="back" href="/admin/prompts">{$T.admin.prompts.backToPrompts}</a>
 
 {#if !prompt}
-  <p class="muted">Loading…</p>
+  <p class="muted">{$T.common.loading}</p>
 {:else}
   <header class="page-head">
-    <span class="eyebrow">Admin / Prompts / {labels[prompt.type] ?? prompt.type}</span>
+    <span class="eyebrow">{$T.admin.prompts.eyebrowDetail} / {labels[prompt.type] ?? prompt.type}</span>
     <h1>{labels[prompt.type] ?? prompt.type}</h1>
     {#if prompt.updatedAt}
-      <p class="when">Last updated {formatRelative(prompt.updatedAt)}</p>
+      <p class="when">{$T.admin.prompts.lastUpdated} {formatRelative(prompt.updatedAt)}</p>
     {:else}
-      <p class="when">Currently using the default.</p>
+      <p class="when">{$T.admin.prompts.usingDefault}</p>
     {/if}
   </header>
 
   <div class="split">
     <div class="pane">
       <div class="pane-head">
-        <h2>Instructions</h2>
-        <span class="meta editable">Editable</span>
+        <h2>{$T.admin.prompts.instructions}</h2>
+        <span class="meta editable">{$T.common.editable}</span>
       </div>
-      <p class="hint">
-        How the model should think about the task — tone, focus, what to avoid. This is what admins
-        tweak.
-      </p>
+      <p class="hint">{$T.admin.prompts.instructionsHint}</p>
       <textarea bind:value={instructions} spellcheck="false"></textarea>
       <div class="actions">
-        <Button onclick={save} loading={saving} disabled={!dirty}>Save</Button>
-        <Button variant="danger" onclick={reset} loading={resetting}>Reset to default</Button>
-        {#if dirty}<span class="dirty">Unsaved changes</span>{/if}
+        <Button onclick={save} loading={saving} disabled={!dirty}>{$T.common.save}</Button>
+        <Button variant="danger" onclick={reset} loading={resetting}>{$T.admin.prompts.resetToDefault}</Button>
+        {#if dirty}<span class="dirty">{$T.common.unsavedChanges}</span>{/if}
       </div>
     </div>
 
     <div class="pane">
       <div class="pane-head">
-        <h2>Response schema</h2>
-        <span class="meta locked">Locked</span>
+        <h2>{$T.admin.prompts.responseSchema}</h2>
+        <span class="meta locked">{$T.common.locked}</span>
       </div>
-      <p class="hint">
-        Hard-coded JSON contract. Always appended after the instructions. The structure of the output
-        cannot be changed without a code change.
-      </p>
+      <p class="hint">{$T.admin.prompts.responseSchemaHint}</p>
       <pre class="schema">{prompt.schema}</pre>
     </div>
   </div>
