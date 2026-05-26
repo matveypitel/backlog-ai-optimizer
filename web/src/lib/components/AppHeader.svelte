@@ -12,21 +12,21 @@
 
   let menuOpen = $state(false);
 
-  let userLinks = [
+  let userLinks = $derived([
     { href: '/', label: $T.nav.dashboard },
     { href: '/suggestions', label: $T.nav.suggestions },
     { href: '/reprioritization', label: $T.nav.reprioritization },
     { href: '/competitors', label: $T.nav.competitors },
     { href: '/scraping', label: $T.nav.scraping },
     { href: '/jira', label: $T.nav.jira }
-  ];
+  ]);
 
- let adminLinks = [
+  let adminLinks = $derived([
     { href: '/admin/sync', label: $T.nav.sync },
     { href: '/admin/embeddings', label: $T.nav.embeddings },
     { href: '/admin/prompts', label: $T.nav.prompts },
     { href: '/admin/users', label: $T.nav.users }
-  ];
+  ]);
 
   function isActive(href: string): boolean {
     const path = $page.url.pathname;

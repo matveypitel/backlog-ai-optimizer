@@ -36,7 +36,7 @@ export const T = derived(locale, ($l) => dictionaries[$l]);
 export const localeLabels: Record<Locale, string> = {
   en: 'EN',
   ru: 'RU',
-  kk: 'KK',
+  kk: 'KZ',
 };
 
 export const localeNativeNames: Record<Locale, string> = {
