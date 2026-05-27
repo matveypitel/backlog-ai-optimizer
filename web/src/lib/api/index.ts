@@ -68,6 +68,8 @@ export const suggestionsApi = {
   get: (id: string) => api<FeatureSuggestion>(`/api/feature-suggestions/${id}`),
   apply: (id: string) =>
     api<{ jiraKey: string }>(`/api/feature-suggestions/${id}/apply`, { method: 'POST' }),
+  dismiss: (id: string) =>
+    api(`/api/feature-suggestions/${id}`, { method: 'DELETE' }),
   latestJob: () => api<JobStatusInfo>('/api/feature-suggestions/jobs/latest')
 };
 
@@ -76,6 +78,8 @@ export const reprioritizationApi = {
   list: () => api<ReprioritizationSuggestion[]>('/api/reprioritization'),
   apply: (jiraKey: string) =>
     api(`/api/reprioritization/${encodeURIComponent(jiraKey)}/apply`, { method: 'POST' }),
+  dismiss: (jiraKey: string) =>
+    api(`/api/reprioritization/${encodeURIComponent(jiraKey)}`, { method: 'DELETE' }),
   latestJob: () => api<JobStatusInfo>('/api/reprioritization/jobs/latest')
 };
 

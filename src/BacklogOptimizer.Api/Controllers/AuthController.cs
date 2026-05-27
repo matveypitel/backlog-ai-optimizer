@@ -77,4 +77,21 @@ public sealed class AuthController : ControllerBase
         var result = await _authService.CreateUserAsync(request.Email, request.Password, request.Role, cancellationToken);
         return result.ToActionResult();
     }
+
+    [HttpDelete("users/{id:guid}")]
+    [Authorize(Roles = Roles.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
+    {
+        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!Guid.TryParse(idClaim, out var requesterId))
+            return Unauthorized();
+
+        var result = await _authService.DeleteUserAsync(id, requesterId, cancellationToken);
+        return result.ToActionResult(StatusCodes.Status204NoContent);
+    }
 }

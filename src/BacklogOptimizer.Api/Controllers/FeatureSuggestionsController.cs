@@ -82,6 +82,22 @@ public sealed class FeatureSuggestionsController : ControllerBase
         return result.ToActionResult(value => Ok(new ApplyFeatureSuggestionResponse(value.JiraKey)));
     }
 
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Dismiss(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await _dbContext.FeatureSuggestions
+            .FirstOrDefaultAsync(f => f.Id == id && f.AppliedAt == null, cancellationToken);
+
+        if (item is null)
+            return NotFound();
+
+        _dbContext.FeatureSuggestions.Remove(item);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("jobs/latest")]
     [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

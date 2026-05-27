@@ -14,6 +14,7 @@
   let loading = $state(true);
   let analyzing = $state(false);
   let applying = $state(new Set<string>());
+  let dismissing = $state(new Set<string>());
   let job = $state<JobStatusInfo | null>(null);
   let pollTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -29,6 +30,21 @@
       const next = new Set(applying);
       next.delete(jiraKey);
       applying = next;
+    }
+  }
+
+  async function dismissOne(jiraKey: string) {
+    dismissing = new Set(dismissing).add(jiraKey);
+    try {
+      await reprioritizationApi.dismiss(jiraKey);
+      items = items.filter((x) => x.jiraKey !== jiraKey);
+      toast.success($T.reprioritization.dismissed);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.reprioritization.failedToDismiss);
+    } finally {
+      const next = new Set(dismissing);
+      next.delete(jiraKey);
+      dismissing = next;
     }
   }
 
@@ -128,9 +144,15 @@
                 <StatusBadge status={r.suggestedPriority} />
                 <span class="confidence mono">{$T.common.confidence} {r.confidenceScore.toFixed(2)}</span>
                 <Button
+                  variant="ghost"
+                  onclick={() => dismissOne(r.jiraKey)}
+                  loading={dismissing.has(r.jiraKey)}
+                  disabled={dismissing.has(r.jiraKey) || applying.has(r.jiraKey)}
+                >{$T.reprioritization.dismiss}</Button>
+                <Button
                   onclick={() => applyOne(r.jiraKey)}
                   loading={applying.has(r.jiraKey)}
-                  disabled={applying.has(r.jiraKey)}
+                  disabled={applying.has(r.jiraKey) || dismissing.has(r.jiraKey)}
                 >{$T.common.apply}</Button>
               </div>
             </div>

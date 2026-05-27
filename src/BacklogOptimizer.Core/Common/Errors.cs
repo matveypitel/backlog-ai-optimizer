@@ -67,6 +67,21 @@ public static class Errors
             "auth.password_too_short",
             ErrorType.Validation,
             "Password must be at least 8 characters long.");
+
+        public static Error UserNotFound(Guid id) => new(
+            "auth.user_not_found",
+            ErrorType.NotFound,
+            $"User '{id}' was not found.");
+
+        public static Error CannotDeleteSelf => new(
+            "auth.cannot_delete_self",
+            ErrorType.Validation,
+            "You cannot delete your own account.");
+
+        public static Error CannotDeleteLastAdmin => new(
+            "auth.cannot_delete_last_admin",
+            ErrorType.Validation,
+            "Cannot delete the last admin account.");
     }
 
     public static class ScrapingSource

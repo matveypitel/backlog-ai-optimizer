@@ -12,4 +12,6 @@ public interface IAuthService
     Task<Result<CreatedUserResult>> CreateUserAsync(string email, string password, Role role, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<UserSummary>> GetUsersAsync(CancellationToken cancellationToken = default);
+
+    Task<Result> DeleteUserAsync(Guid id, Guid requesterId, CancellationToken cancellationToken = default);
 }

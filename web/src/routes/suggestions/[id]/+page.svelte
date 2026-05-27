@@ -1,15 +1,20 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { suggestionsApi, ApiError } from '$lib/api';
   import type { FeatureSuggestion } from '$lib/types';
   import StatusBadge from '$lib/components/StatusBadge.svelte';
   import Tag from '$lib/components/Tag.svelte';
+  import Button from '$lib/components/Button.svelte';
+  import { toast } from '$lib/stores/toast';
   import { T } from '$lib/i18n';
   import { formatDate, parseJsonArray } from '$lib/utils/format';
 
   let item = $state<FeatureSuggestion | null>(null);
   let error = $state<string | null>(null);
+  let dismissing = $state(false);
+  let applying = $state(false);
 
   onMount(async () => {
     try {
@@ -18,6 +23,32 @@
       error = err instanceof ApiError ? err.detail ?? err.message : $T.common.failedToLoad;
     }
   });
+
+  async function dismiss() {
+    if (!item) return;
+    dismissing = true;
+    try {
+      await suggestionsApi.dismiss(item.id);
+      toast.success($T.suggestions.dismissed);
+      goto('/suggestions');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.suggestions.failedToDismiss);
+      dismissing = false;
+    }
+  }
+
+  async function apply() {
+    if (!item) return;
+    applying = true;
+    try {
+      const result = await suggestionsApi.apply(item.id);
+      toast.success(`${$T.suggestions.createdIn} ${result.jiraKey} ${$T.suggestions.inJira}`);
+      goto('/suggestions');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.suggestions.failedToCreate);
+      applying = false;
+    }
+  }
 
   let stories = $derived(item ? parseJsonArray(item.userStories) : []);
   let criteria = $derived(item ? parseJsonArray(item.acceptanceCriteria) : []);
@@ -42,6 +73,19 @@
         {#if item.estimatedImpact}
           <span class="impact">{$T.suggestions_detail.impact}: {item.estimatedImpact}</span>
         {/if}
+      </div>
+      <div class="actions">
+        <Button
+          variant="ghost"
+          onclick={dismiss}
+          loading={dismissing}
+          disabled={dismissing || applying}
+        >{$T.suggestions.dismiss}</Button>
+        <Button
+          onclick={apply}
+          loading={applying}
+          disabled={applying || dismissing}
+        >{$T.suggestions.createInJira}</Button>
       </div>
     </header>
 
@@ -135,6 +179,12 @@
     display: flex;
     gap: var(--space-3);
     align-items: center;
+    flex-wrap: wrap;
+  }
+  .actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
     flex-wrap: wrap;
   }
   .impact {

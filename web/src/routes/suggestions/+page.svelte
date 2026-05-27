@@ -15,6 +15,7 @@
   let loading = $state(true);
   let analyzing = $state(false);
   let applying = $state(new Set<string>());
+  let dismissing = $state(new Set<string>());
   let job = $state<JobStatusInfo | null>(null);
   let pollTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -32,6 +33,23 @@
       const next = new Set(applying);
       next.delete(id);
       applying = next;
+    }
+  }
+
+  async function dismissOne(event: MouseEvent, id: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    dismissing = new Set(dismissing).add(id);
+    try {
+      await suggestionsApi.dismiss(id);
+      items = items.filter((x) => x.id !== id);
+      toast.success($T.suggestions.dismissed);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.suggestions.failedToDismiss);
+    } finally {
+      const next = new Set(dismissing);
+      next.delete(id);
+      dismissing = next;
     }
   }
 
@@ -122,9 +140,15 @@
             <div class="row-right">
               <StatusBadge status={item.suggestedPriority} />
               <Button
+                variant="ghost"
+                onclick={(e: MouseEvent) => dismissOne(e, item.id)}
+                loading={dismissing.has(item.id)}
+                disabled={dismissing.has(item.id) || applying.has(item.id)}
+              >{$T.suggestions.dismiss}</Button>
+              <Button
                 onclick={(e: MouseEvent) => applyOne(e, item.id)}
                 loading={applying.has(item.id)}
-                disabled={applying.has(item.id)}
+                disabled={applying.has(item.id) || dismissing.has(item.id)}
               >{$T.suggestions.createInJira}</Button>
             </div>
           </div>

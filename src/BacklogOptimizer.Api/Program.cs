@@ -5,7 +5,7 @@ using Scalar.AspNetCore;
 
 try
 {
-    Microsoft.Playwright.Program.Main(["install"]);
+    Microsoft.Playwright.Program.Main(["install", "chromium"]);
 }
 catch (Exception ex)
 {

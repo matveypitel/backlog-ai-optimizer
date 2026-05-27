@@ -8,6 +8,7 @@
   import { toast } from '$lib/stores/toast';
   import { T } from '$lib/i18n';
   import { formatDate } from '$lib/utils/format';
+  import { currentUser } from '$lib/stores/auth';
 
   const roles = {
     User: 0,
@@ -19,6 +20,7 @@
   let password = $state('');
   let role = $state<'User' | 'Admin'>('User');
   let creating = $state(false);
+  let deletingId = $state<string | null>(null);
 
   async function load() {
     try {
@@ -42,6 +44,22 @@
       toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
     } finally {
       creating = false;
+    }
+  }
+
+  async function deleteUser(user: UserSummary) {
+    const msg = $T.admin.users.deleteConfirm.replace('{email}', user.email);
+    if (!confirm(msg)) return;
+
+    deletingId = user.id;
+    try {
+      await authApi.deleteUser(user.id);
+      toast.success($T.admin.users.userDeleted);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.detail ?? err.message : $T.common.failed);
+    } finally {
+      deletingId = null;
     }
   }
 
@@ -81,6 +99,7 @@
             <th>{$T.admin.users.colEmail}</th>
             <th>{$T.admin.users.colRole}</th>
             <th>{$T.admin.users.colCreated}</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -89,6 +108,26 @@
               <td class="mono">{u.email}</td>
               <td>{u.role}</td>
               <td class="muted">{formatDate(u.createdAt)}</td>
+              <td class="actions">
+                {#if u.id !== $currentUser?.id}
+                  <button
+                    class="del-btn"
+                    disabled={deletingId === u.id}
+                    onclick={() => deleteUser(u)}
+                    aria-label="Delete {u.email}"
+                  >
+                    {#if deletingId === u.id}
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="8 6" stroke-linecap="round"/>
+                      </svg>
+                    {:else}
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M2.5 4h9M5.5 4V2.5h3V4M6 6.5v4M8 6.5v4M3.5 4l.5 7.5h6l.5-7.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    {/if}
+                  </button>
+                {/if}
+              </td>
             </tr>
           {/each}
         </tbody>
@@ -159,4 +198,43 @@
     border-bottom: var(--hairline);
   }
   .muted { color: var(--ink-soft); font-size: 0.85rem; }
+
+  .actions {
+    width: 40px;
+    text-align: right;
+    padding-right: var(--space-2);
+  }
+
+  .del-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: var(--radius);
+    border: var(--hairline);
+    background: transparent;
+    color: var(--ink-faint);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 120ms ease, background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+
+  tr:hover .del-btn {
+    opacity: 1;
+  }
+
+  .del-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger, #e5534b) 10%, transparent);
+    border-color: var(--danger, #e5534b);
+    color: var(--danger, #e5534b);
+  }
+
+  .del-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 </style>

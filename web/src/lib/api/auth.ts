@@ -13,5 +13,8 @@ export const authApi = {
   listUsers: () => api<UserSummary[]>('/api/auth/users'),
 
   createUser: (email: string, password: string, role: number) =>
-    api('/api/auth/users', { method: 'POST', body: { email, password, role } })
+    api('/api/auth/users', { method: 'POST', body: { email, password, role } }),
+
+  deleteUser: (id: string) =>
+    api(`/api/auth/users/${id}`, { method: 'DELETE' })
 };

@@ -43,6 +43,8 @@ internal sealed class JiraSyncService : IJiraSyncService
         var errors = new List<string>();
         var syncedCount = 0;
         string? nextPageToken = null;
+        var seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var syncFullyCompleted = false;
 
         while (true)
         {
@@ -62,6 +64,7 @@ internal sealed class JiraSyncService : IJiraSyncService
 
             foreach (var dto in page.Issues)
             {
+                seenKeys.Add(dto.Key);
                 try
                 {
                     await UpsertAsync(dto, cancellationToken);
@@ -77,9 +80,38 @@ internal sealed class JiraSyncService : IJiraSyncService
             }
 
             if (string.IsNullOrEmpty(page.NextPageToken) || page.Issues.Count == 0)
+            {
+                syncFullyCompleted = true;
                 break;
+            }
 
             nextPageToken = page.NextPageToken;
+        }
+
+        // Delete issues that no longer exist in Jira (only when all pages were fetched successfully)
+        if (syncFullyCompleted && seenKeys.Count > 0)
+        {
+            var deletedCount = 0;
+            try
+            {
+                var orphaned = await _dbContext.JiraIssues
+                    .Where(j => j.ProjectKey == _settings.ProjectKey && !seenKeys.Contains(j.JiraKey))
+                    .ToListAsync(cancellationToken);
+
+                if (orphaned.Count > 0)
+                {
+                    _dbContext.JiraIssues.RemoveRange(orphaned);
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                    deletedCount = orphaned.Count;
+                    _logger.LogInformation("Deleted {Count} Jira issues no longer present in Jira: {Keys}",
+                        deletedCount, string.Join(", ", orphaned.Select(j => j.JiraKey)));
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Failed to delete orphaned Jira issues");
+                errors.Add($"cleanup: {ex.Message}");
+            }
         }
 
         if (syncedCount > 0)

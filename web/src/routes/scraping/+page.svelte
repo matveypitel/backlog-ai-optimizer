@@ -303,7 +303,7 @@
     align-items: flex-end;
     flex-wrap: wrap;
   }
-  .row > :global(.field) { flex: 1; min-width: 180px; max-width: 380px; }
+  .row > :global(.field) { flex: 1; min-width: 180px; max-width: 380px; margin-bottom: 0; }
 
   .table-scroll {
     overflow-x: auto;

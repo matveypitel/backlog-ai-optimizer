@@ -63,6 +63,22 @@ public sealed class ReprioritizationController : ControllerBase
         return result.ToActionResult();
     }
 
+    [HttpDelete("{jiraKey}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Dismiss(string jiraKey, CancellationToken cancellationToken)
+    {
+        var item = await _dbContext.ReprioritizationSuggestions
+            .FirstOrDefaultAsync(r => r.JiraKey == jiraKey && r.AppliedAt == null, cancellationToken);
+
+        if (item is null)
+            return NotFound();
+
+        _dbContext.ReprioritizationSuggestions.Remove(item);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("jobs/latest")]
     [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -64,6 +64,28 @@ internal sealed class AuthService : IAuthService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Result> DeleteUserAsync(Guid id, Guid requesterId, CancellationToken cancellationToken = default)
+    {
+        if (id == requesterId)
+            return Errors.Auth.CannotDeleteSelf;
+
+        var user = await _dbContext.Users.FindAsync([id], cancellationToken);
+        if (user is null)
+            return Errors.Auth.UserNotFound(id);
+
+        if (user.Role == Role.Admin)
+        {
+            var adminCount = await _dbContext.Users.CountAsync(u => u.Role == Role.Admin, cancellationToken);
+            if (adminCount <= 1)
+                return Errors.Auth.CannotDeleteLastAdmin;
+        }
+
+        _dbContext.Users.Remove(user);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+
     private async Task<Result<CreatedUserResult>> CreateUserInternalAsync(string email, string password, Role role, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(email))
