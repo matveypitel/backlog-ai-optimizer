@@ -108,6 +108,7 @@ public static class DependencyInjection
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<AdminSeedSettings>(configuration.GetSection(AdminSeedSettings.SectionName));
+        services.Configure<DemoUserSeedSettings>(configuration.GetSection(DemoUserSeedSettings.SectionName));
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
