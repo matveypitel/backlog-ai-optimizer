@@ -7,4 +7,5 @@
   <Project Path="src/BacklogOptimizer.Application/BacklogOptimizer.Application.csproj" Id="7bcabfba-9401-4aad-a8d9-7215202fc022" />
   <Project Path="src/BacklogOptimizer.Core/BacklogOptimizer.Core.csproj" Id="b5450555-233e-410f-828f-8cb65d918f39" />
   <Project Path="src/BacklogOptimizer.Infrastructure/BacklogOptimizer.Infrastructure.csproj" Id="8c409472-94b8-4328-8b0a-0bbd9c60c719" />
+  <Project Path="tests/BacklogOptimizer.UnitTests/BacklogOptimizer.UnitTests.csproj" Id="a1b2c3d4-e5f6-7890-abcd-ef1234567890" />
 </Solution>

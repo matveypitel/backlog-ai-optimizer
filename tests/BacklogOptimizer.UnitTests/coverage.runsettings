@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Exclude>
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Migrations.*,
+            [BacklogOptimizer.Api]BacklogOptimizer.Api.Program,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.BackgroundServices.*,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Analysis.OpenAiChatClient,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Embeddings.OpenAiEmbeddingClient,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Embeddings.EmbeddingSyncService,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Embeddings.SimilaritySearchService,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Analysis.FeatureSuggestionAnalyzer,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Analysis.ReprioritizationAnalyzer,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Jira.JiraApiClient,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Jira.JiraSyncService,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Scraping.FeatureExtractor,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Auth.AdminSeeder,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Prompts.PromptSeeder,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Prompts.PromptResources,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Suggestions.SuggestionApplicationService,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.DependencyInjection,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Jira.Dto.*,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Analysis.Dto.*,
+            [BacklogOptimizer.Infrastructure]BacklogOptimizer.Infrastructure.Embeddings.Dto.*,
+            [BacklogOptimizer.Api]BacklogOptimizer.Api.Controllers.*,
+            [BacklogOptimizer.Api]BacklogOptimizer.Api.Middleware.*,
+            [BacklogOptimizer.Api]BacklogOptimizer.Api.Models.*,
+            [BacklogOptimizer.Application]BacklogOptimizer.Application.Jira.*,
+            [BacklogOptimizer.Application]BacklogOptimizer.Application.Embeddings.*,
+            [BacklogOptimizer.Application]BacklogOptimizer.Application.Analysis.*,
+            [BacklogOptimizer.Application]BacklogOptimizer.Application.Suggestions.*,
+            [BacklogOptimizer.Application]BacklogOptimizer.Application.Settings.*
+          </Exclude>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

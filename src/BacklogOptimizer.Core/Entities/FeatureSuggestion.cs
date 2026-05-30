@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using BacklogOptimizer.Core.Common;
 
 namespace BacklogOptimizer.Core.Entities;
@@ -25,6 +27,7 @@ public class FeatureSuggestion : BaseEntity
         AppliedJiraKey = jiraKey;
     }
 
+    [ExcludeFromCodeCoverage]
     private FeatureSuggestion()
     {
         Title = string.Empty;

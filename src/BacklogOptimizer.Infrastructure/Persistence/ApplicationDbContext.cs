@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using BacklogOptimizer.Core.Common;
 using BacklogOptimizer.Core.Entities;
 
@@ -26,6 +28,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<PromptTemplate> PromptTemplates { get; set; }
     public DbSet<ScrapingSource> ScrapingSources { get; set; }
 
+    [ExcludeFromCodeCoverage]
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

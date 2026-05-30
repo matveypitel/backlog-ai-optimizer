@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Pgvector;
 
 namespace BacklogOptimizer.Core.Entities;
@@ -11,6 +13,7 @@ public class JiraIssueEmbedding
 
     public JiraIssue JiraIssue { get; private set; } = null!;
 
+    [ExcludeFromCodeCoverage]
     private JiraIssueEmbedding() { }
 
     public JiraIssueEmbedding(Guid jiraIssueId, string modelName, Vector vector)

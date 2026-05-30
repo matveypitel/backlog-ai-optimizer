@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using BacklogOptimizer.Core.Common;
 
 namespace BacklogOptimizer.Core.Entities;
@@ -10,6 +12,7 @@ public class ScrapingSource : BaseEntity
     public DateTime? LastScrapedAt { get; private set; }
     public int? RefreshIntervalHours { get; private set; }
 
+    [ExcludeFromCodeCoverage]
     private ScrapingSource()
     {
         Url = string.Empty;

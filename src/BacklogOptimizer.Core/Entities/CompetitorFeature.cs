@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using BacklogOptimizer.Core.Common;
 
 namespace BacklogOptimizer.Core.Entities;
@@ -17,6 +19,7 @@ public class CompetitorFeature : BaseEntity
     public ScrapedPage ScrapedPage { get; private set; } = null!;
     public CompetitorFeatureEmbedding? Embedding { get; private set; }
 
+    [ExcludeFromCodeCoverage]
     private CompetitorFeature()
     {
         Name = string.Empty;

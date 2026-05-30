@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Pgvector;
 
 namespace BacklogOptimizer.Core.Entities;
@@ -11,6 +13,7 @@ public class CompetitorFeatureEmbedding
 
     public CompetitorFeature CompetitorFeature { get; private set; } = null!;
 
+    [ExcludeFromCodeCoverage]
     private CompetitorFeatureEmbedding() { }
 
     public CompetitorFeatureEmbedding(Guid competitorFeatureId, string modelName, Vector vector)
